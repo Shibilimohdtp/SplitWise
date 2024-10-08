@@ -1,0 +1,56 @@
+import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:provider/provider.dart';
+import 'package:splitwise/models/user.dart';
+import 'package:splitwise/services/auth_service.dart';
+import 'package:splitwise/services/settings_service.dart';
+import 'package:splitwise/features/authentication/screens/login_screen.dart';
+import 'package:splitwise/features/group_management/screens/group_list_screen.dart';
+import 'package:splitwise/utils/app_theme.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthService()),
+        ChangeNotifierProvider(create: (_) => SettingsService()),
+      ],
+      child: Consumer<SettingsService>(
+        builder: (context, settings, _) {
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            title: 'Expense Tracker',
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: settings.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+            home: AuthWrapper(),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class AuthWrapper extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final authService = Provider.of<AuthService>(context);
+    return StreamBuilder<User?>(
+      stream: authService.user,
+      builder: (_, AsyncSnapshot<User?> snapshot) {
+        if (snapshot.connectionState == ConnectionState.active) {
+          final User? user = snapshot.data;
+          return user == null ? LoginScreen() : GroupListScreen();
+        }
+        return Scaffold(body: Center(child: CircularProgressIndicator()));
+      },
+    );
+  }
+}

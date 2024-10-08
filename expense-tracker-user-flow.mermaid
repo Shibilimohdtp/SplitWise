@@ -1,0 +1,29 @@
+graph TD
+    A[Start] --> B[User Sign Up]
+    B --> C{Create or Join Group?}
+    C -->|Create| D[Create Group]
+    C -->|Join| E[Receive Invitation]
+    D --> F[Invite Members]
+    F --> G[Members Receive Invitation]
+    G --> H{Accept Invitation?}
+    H -->|Yes| I[Join Group]
+    H -->|No| J[Decline Invitation]
+    E --> H
+    I --> K[View Group Dashboard]
+    K --> L[Add Expense]
+    L --> M[Enter Amount]
+    M --> N[Select Participants]
+    N --> O[Choose Split Method]
+    O --> P[Confirm Expense]
+    P --> Q[Update Group Balance]
+    Q --> R[View Updated Dashboard]
+    R --> S{More Actions?}
+    S -->|Yes| T[Choose Action]
+    T --> U{What Action?}
+    U -->|Add Expense| L
+    U -->|Invite Member| F
+    U -->|View Analysis| V[View Expense Analysis]
+    V --> W[See Individual Contributions]
+    W --> X[View Settlement Suggestions]
+    X --> S
+    S -->|No| Y[End]
