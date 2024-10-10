@@ -1,18 +1,21 @@
-// custom_text_field.dart
 import 'package:flutter/material.dart';
 
 class CustomTextField extends StatelessWidget {
   final String labelText;
   final Function(String?) onSaved;
-  final String? Function(String?) validator;
+  final String? Function(String?)? validator;
   final bool obscureText;
+  final TextInputType? keyboardType;
+  final int? maxLines;
 
   const CustomTextField({
     Key? key,
     required this.labelText,
     required this.onSaved,
-    required this.validator,
+    this.validator,
     this.obscureText = false,
+    this.keyboardType,
+    this.maxLines,
   }) : super(key: key);
 
   @override
@@ -27,6 +30,8 @@ class CustomTextField extends StatelessWidget {
       obscureText: obscureText,
       validator: validator,
       onSaved: onSaved,
+      keyboardType: keyboardType,
+      maxLines: maxLines ?? 1,
     );
   }
 }

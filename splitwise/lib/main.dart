@@ -4,14 +4,25 @@ import 'package:provider/provider.dart';
 import 'package:splitwise/models/user.dart';
 import 'package:splitwise/services/auth_service.dart';
 import 'package:splitwise/services/settings_service.dart';
-import 'package:splitwise/features/authentication/screens/login_screen.dart';
-import 'package:splitwise/features/group_management/screens/group_list_screen.dart';
+import 'package:splitwise/services/expense_service.dart';
+import 'package:splitwise/services/user_service.dart';
+import 'package:splitwise/features/authentication/login_screen.dart';
+import 'package:splitwise/features/group_management/group_list_screen.dart';
 import 'package:splitwise/utils/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  runApp(MyApp());
+
+  final settingsService = SettingsService();
+  await settingsService.init();
+
+  runApp(
+    ChangeNotifierProvider.value(
+      value: settingsService,
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -21,6 +32,10 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthService()),
         ChangeNotifierProvider(create: (_) => SettingsService()),
+        Provider<UserService>(create: (_) => UserService()),
+        ProxyProvider<SettingsService, ExpenseService>(
+          update: (_, settings, __) => ExpenseService(settings),
+        ),
       ],
       child: Consumer<SettingsService>(
         builder: (context, settings, _) {

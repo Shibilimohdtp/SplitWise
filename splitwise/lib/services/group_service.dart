@@ -9,26 +9,33 @@ class GroupService {
   final DatabaseHelper _databaseHelper = DatabaseHelper.instance;
   final NotificationService _notificationService = NotificationService();
 
-  Future<Group> createGroup(
+  Future<Group?> createGroup(
       String name, String description, String creatorId) async {
-    final group = Group(
-      id: DateTime.now().millisecondsSinceEpoch.toString(), // Temporary ID
-      name: name,
-      description: description,
-      creatorId: creatorId,
-      members: [creatorId],
-    );
+    try {
+      final group = Group(
+        id: '', // Firestore will generate this
+        name: name,
+        description: description,
+        creatorId: creatorId,
+        members: [creatorId], // Ensure the creator is added to the members list
+      );
 
-    final bool hasConnection = await InternetConnectionChecker().hasConnection;
-    if (!hasConnection) {
-      // Offline: Save to local database
-      await _databaseHelper.insertGroup(group);
-      return group;
-    } else {
-      // Online: Save to Firestore
-      final docRef = await _firestore.collection('groups').add(group.toMap());
-      final doc = await docRef.get();
-      return Group.fromFirestore(doc);
+      final bool hasConnection =
+          await InternetConnectionChecker().hasConnection;
+      if (!hasConnection) {
+        // Offline: Save to local database
+        await _databaseHelper.insertGroup(group);
+        return group;
+      } else {
+        // Online: Save to Firestore
+        final docRef = await _firestore.collection('groups').add(group.toMap());
+        final newGroup = group.copyWith(id: docRef.id);
+        await docRef.update({'id': docRef.id});
+        return newGroup;
+      }
+    } catch (e) {
+      print('Error in createGroup: $e');
+      return null;
     }
   }
 

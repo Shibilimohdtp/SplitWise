@@ -4,16 +4,19 @@ import 'package:splitwise/services/database_helper.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:splitwise/services/notification_service.dart';
 import 'package:splitwise/services/settings_service.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'dart:io';
 
 class ExpenseService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final DatabaseHelper _databaseHelper = DatabaseHelper.instance;
   final NotificationService _notificationService = NotificationService();
   final SettingsService _settingsService;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
 
   ExpenseService(this._settingsService);
 
-  Future<Expense> addExpense(Expense expense) async {
+  Future<Expense> addExpense(Expense expense, {File? receiptImage}) async {
     final bool hasConnection = await InternetConnectionChecker().hasConnection;
     late Expense newExpense;
 
@@ -29,9 +32,17 @@ class ExpenseService {
       newExpense = convertedExpense.copyWith(id: localId);
     } else {
       // Online: Save to Firestore
-      final docRef =
-          await _firestore.collection('expenses').add(convertedExpense.toMap());
-      newExpense = convertedExpense.copyWith(id: docRef.id);
+      String? receiptUrl;
+      if (receiptImage != null) {
+        receiptUrl =
+            await _uploadReceiptImage(receiptImage, convertedExpense.id);
+      }
+      final expenseWithReceipt =
+          convertedExpense.copyWith(receiptUrl: receiptUrl);
+      final docRef = await _firestore
+          .collection('expenses')
+          .add(expenseWithReceipt.toMap());
+      newExpense = expenseWithReceipt.copyWith(id: docRef.id);
       await docRef.update({'id': docRef.id});
 
       // Get group members
@@ -55,14 +66,90 @@ class ExpenseService {
     return newExpense;
   }
 
-  Stream<List<Expense>> getGroupExpenses(String groupId) {
-    return _firestore
+  Future<String> _uploadReceiptImage(File image, String expenseId) async {
+    final ref = _storage.ref().child('receipts/$expenseId.jpg');
+    await ref.putFile(image);
+    return await ref.getDownloadURL();
+  }
+
+  Stream<List<Expense>> getGroupExpenses(String groupId,
+      {String? category,
+      DateTime? startDate,
+      DateTime? endDate,
+      String? memberId}) {
+    Query query = _firestore
         .collection('expenses')
         .where('groupId', isEqualTo: groupId)
-        .orderBy('date', descending: true)
-        .snapshots()
-        .map((snapshot) =>
-            snapshot.docs.map((doc) => Expense.fromFirestore(doc)).toList());
+        .orderBy('date', descending: true);
+
+    if (category != null) {
+      query = query.where('category', isEqualTo: category);
+    }
+
+    if (startDate != null) {
+      query = query.where('date',
+          isGreaterThanOrEqualTo: Timestamp.fromDate(startDate));
+    }
+
+    if (endDate != null) {
+      query =
+          query.where('date', isLessThanOrEqualTo: Timestamp.fromDate(endDate));
+    }
+
+    if (memberId != null) {
+      query = query.where('payerId', isEqualTo: memberId);
+    }
+
+    return query.snapshots().map((snapshot) =>
+        snapshot.docs.map((doc) => Expense.fromFirestore(doc)).toList());
+  }
+
+  Future<double> calculateGroupBalance(String groupId, String userId) async {
+    final expenses = await _firestore
+        .collection('expenses')
+        .where('groupId', isEqualTo: groupId)
+        .get();
+
+    double balance = 0;
+
+    for (var doc in expenses.docs) {
+      final expense = Expense.fromFirestore(doc);
+      if (expense.payerId == userId) {
+        balance += expense.amount;
+      }
+      if (expense.splitDetails.containsKey(userId)) {
+        balance -= expense.splitDetails[userId]!;
+      }
+    }
+
+    return balance;
+  }
+
+  Future<Map<String, double>> calculateOverallBalance(String userId) async {
+    final userGroups = await _firestore
+        .collection('groups')
+        .where('members', arrayContains: userId)
+        .get();
+
+    double totalOwed = 0;
+    double totalOwing = 0;
+
+    for (var groupDoc in userGroups.docs) {
+      final groupId = groupDoc.id;
+      final groupBalance = await calculateBalances(groupId);
+      final userBalance = groupBalance[userId] ?? 0;
+
+      if (userBalance > 0) {
+        totalOwed += userBalance;
+      } else {
+        totalOwing += userBalance.abs();
+      }
+    }
+
+    return {
+      'owed': totalOwed,
+      'owing': totalOwing,
+    };
   }
 
   Future<void> updateExpense(Expense expense) async {

@@ -23,13 +23,22 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
       try {
         final authService = Provider.of<AuthService>(context, listen: false);
         final groupService = GroupService();
-        await groupService.createGroup(
-            _name, _description, authService.currentUser!.uid);
-        Navigator.pop(context);
+        final currentUser = authService.currentUser;
+        if (currentUser == null) {
+          throw Exception('No user logged in');
+        }
+        final group = await groupService.createGroup(
+            _name, _description, currentUser.uid);
+        if (group != null) {
+          Navigator.pop(context);
+        } else {
+          throw Exception('Failed to create group');
+        }
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to create group. Please try again.')),
         );
+        print('Error creating group: $e');
       }
       setState(() => _isLoading = false);
     }

@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:splitwise/services/auth_service.dart';
-import 'package:splitwise/features/authentication/screens/signup_screen.dart';
-import 'package:splitwise/features/authentication/screens/forgot_password_screen.dart';
+import 'package:splitwise/features/authentication/signup_screen.dart';
+import 'package:splitwise/features/authentication/forgot_password_screen.dart';
 import 'package:splitwise/widgets/custom_text_field.dart';
 import 'package:splitwise/widgets/custom_button.dart';
-import 'package:splitwise/models/user.dart'; // Import your custom User model
+import 'package:splitwise/models/user.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -28,17 +27,20 @@ class _LoginScreenState extends State<LoginScreen> {
             .signIn(_email, _password);
         if (user != null) {
           // Navigate to the main screen or handle successful login
-          // For example:
-          // Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => HomeScreen()));
+          Navigator.pushReplacementNamed(context, '/home');
         } else {
           throw Exception('Failed to sign in');
         }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to sign in. Please try again.')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to sign in. Please try again.')),
+          );
+        }
       }
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 

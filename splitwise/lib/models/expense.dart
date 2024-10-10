@@ -10,6 +10,10 @@ class Expense {
   final String description;
   final DateTime date;
   final Map<String, double> splitDetails;
+  final String category;
+  final String? receiptUrl;
+  final String? comment;
+  final String splitMethod; // New field
 
   Expense({
     required this.id,
@@ -20,6 +24,10 @@ class Expense {
     required this.description,
     required this.date,
     required this.splitDetails,
+    required this.category,
+    this.receiptUrl,
+    this.comment,
+    required this.splitMethod, // New required field
   });
 
   Map<String, dynamic> toMap() {
@@ -32,6 +40,10 @@ class Expense {
       'description': description,
       'date': Timestamp.fromDate(date),
       'splitDetails': jsonEncode(splitDetails),
+      'category': category,
+      'receiptUrl': receiptUrl,
+      'comment': comment,
+      'splitMethod': splitMethod, // New field
     };
   }
 
@@ -45,6 +57,10 @@ class Expense {
       description: map['description'],
       date: _parseDate(map['date']),
       splitDetails: Map<String, double>.from(jsonDecode(map['splitDetails'])),
+      category: map['category'] ?? 'Uncategorized',
+      receiptUrl: map['receiptUrl'],
+      comment: map['comment'],
+      splitMethod: map['splitMethod'] ?? 'Equal', // New field with default
     );
   }
 
@@ -60,6 +76,10 @@ class Expense {
       date: _parseDate(data['date']),
       splitDetails:
           Map<String, double>.from(jsonDecode(data['splitDetails'] ?? '{}')),
+      category: data['category'] ?? 'Uncategorized',
+      receiptUrl: data['receiptUrl'],
+      comment: data['comment'],
+      splitMethod: data['splitMethod'] ?? 'Equal', // New field with default
     );
   }
 
@@ -82,6 +102,10 @@ class Expense {
     String? description,
     DateTime? date,
     Map<String, double>? splitDetails,
+    String? category,
+    String? receiptUrl,
+    String? comment,
+    String? splitMethod, // New parameter
   }) {
     return Expense(
       id: id ?? this.id,
@@ -92,6 +116,10 @@ class Expense {
       description: description ?? this.description,
       date: date ?? this.date,
       splitDetails: splitDetails ?? this.splitDetails,
+      category: category ?? this.category,
+      receiptUrl: receiptUrl ?? this.receiptUrl,
+      comment: comment ?? this.comment,
+      splitMethod: splitMethod ?? this.splitMethod, // New field
     );
   }
 }

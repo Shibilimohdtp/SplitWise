@@ -22,12 +22,13 @@ class Group {
       'name': name,
       'description': description,
       'creatorId': creatorId,
-      'members': jsonEncode(members),
+      'members': members,
     };
   }
 
   factory Group.fromFirestore(DocumentSnapshot doc) {
     Map data = doc.data() as Map<String, dynamic>;
+    print('Group data from Firestore: $data'); // Debug print
     return Group(
       id: doc.id,
       name: data['name'] ?? '',
@@ -44,6 +45,21 @@ class Group {
       description: map['description'],
       creatorId: map['creatorId'],
       members: List<String>.from(jsonDecode(map['members'])),
+    );
+  }
+  Group copyWith({
+    String? id,
+    String? name,
+    String? description,
+    String? creatorId,
+    List<String>? members,
+  }) {
+    return Group(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      creatorId: creatorId ?? this.creatorId,
+      members: members ?? this.members,
     );
   }
 }

@@ -1,33 +1,36 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class User {
-  final String uid; // Changed from 'id' to 'uid'
+  final String uid;
   final String name;
   final String username;
   final String email;
+  final String? profileImageUrl;
 
   User({
-    required this.uid, // Changed from 'id' to 'uid'
+    required this.uid,
     required this.name,
     required this.username,
     required this.email,
+    this.profileImageUrl,
   });
 
-  // Update the named constructor
   User.fromFirebase({
-    required this.uid, // Changed from 'id' to 'uid'
+    required this.uid,
     required this.email,
     this.name = '',
     this.username = '',
+    this.profileImageUrl,
   });
 
   factory User.fromFirestore(DocumentSnapshot doc) {
     Map data = doc.data() as Map<String, dynamic>;
     return User(
-      uid: doc.id, // Changed from 'id' to 'uid'
+      uid: doc.id,
       name: data['name'] ?? '',
       username: data['username'] ?? '',
       email: data['email'] ?? '',
+      profileImageUrl: data['profileImageUrl'],
     );
   }
 
@@ -36,6 +39,7 @@ class User {
       'name': name,
       'username': username,
       'email': email,
+      'profileImageUrl': profileImageUrl,
     };
   }
 }

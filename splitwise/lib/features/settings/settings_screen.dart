@@ -35,6 +35,7 @@ class SettingsScreen extends StatelessWidget {
         return SimpleDialog(
           title: Text('Select Currency'),
           children: <Widget>[
+            _buildCurrencyOption(context, settingsService, 'INR'),
             _buildCurrencyOption(context, settingsService, 'USD'),
             _buildCurrencyOption(context, settingsService, 'EUR'),
             _buildCurrencyOption(context, settingsService, 'GBP'),

@@ -5,9 +5,9 @@ import 'package:splitwise/models/user.dart';
 import 'package:splitwise/services/auth_service.dart';
 import 'package:splitwise/services/group_service.dart';
 import 'package:splitwise/services/user_service.dart';
-import 'package:splitwise/features/expense_tracking/screens/add_expense_screen.dart';
+import 'package:splitwise/features/expense_tracking/add_expense_screen.dart';
 import 'package:splitwise/widgets/expense_list.dart';
-import 'package:splitwise/features/expense_tracking/screens/expense_analysis_screen.dart';
+import 'package:splitwise/features/expense_tracking/expense_analysis_screen.dart';
 
 class GroupDetailScreen extends StatefulWidget {
   final Group group;
@@ -23,6 +23,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
   late UserService _userService;
   late AuthService _authService;
   late List<User> _members = [];
+  late String _currentUserId;
 
   @override
   void initState() {
@@ -30,6 +31,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
     _groupService = GroupService();
     _userService = UserService();
     _authService = Provider.of<AuthService>(context, listen: false);
+    _currentUserId = _authService.currentUser!.uid;
     _loadMembers();
   }
 
@@ -43,38 +45,28 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.group.name),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.analytics),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ExpenseAnalysisScreen(group: widget.group),
+      body: CustomScrollView(
+        slivers: [
+          _buildSliverAppBar(),
+          SliverToBoxAdapter(
+            child: _buildMembersList(),
+          ),
+          SliverPadding(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            sliver: SliverToBoxAdapter(
+              child: Text(
+                'Expenses',
+                style: Theme.of(context).textTheme.titleLarge,
               ),
             ),
           ),
+          SliverFillRemaining(
+            child: ExpenseList(
+              groupId: widget.group.id,
+              onDeleteExpense: _deleteExpense,
+            ),
+          ),
         ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: _loadMembers,
-        child: CustomScrollView(
-          slivers: [
-            SliverToBoxAdapter(
-              child: _buildGroupInfo(),
-            ),
-            SliverToBoxAdapter(
-              child: _buildMembersList(),
-            ),
-            SliverFillRemaining(
-              child: ExpenseList(
-                groupId: widget.group.id,
-                onDeleteExpense: _deleteExpense,
-              ),
-            ),
-          ],
-        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Navigator.push(
@@ -89,9 +81,76 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
     );
   }
 
+  Widget _buildSliverAppBar() {
+    return SliverAppBar(
+      expandedHeight: 200,
+      floating: false,
+      pinned: true,
+      flexibleSpace: FlexibleSpaceBar(
+        background: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Theme.of(context).primaryColor,
+                Theme.of(context).primaryColor.withOpacity(0.8)
+              ],
+            ),
+          ),
+          child: SafeArea(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Text(
+                    widget.group.description,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Text(
+                    widget.group.name,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      actions: [
+        IconButton(
+          icon: Icon(Icons.analytics),
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ExpenseAnalysisScreen(group: widget.group),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildGroupInfo() {
     return Card(
       margin: EdgeInsets.all(16),
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: EdgeInsets.all(16),
         child: Column(
@@ -99,10 +158,13 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
           children: [
             Text(
               'Description',
-              style: Theme.of(context).textTheme.titleMedium,
+              style: Theme.of(context).textTheme.titleLarge,
             ),
             SizedBox(height: 8),
-            Text(widget.group.description),
+            Text(
+              widget.group.description,
+              style: TextStyle(fontSize: 16),
+            ),
           ],
         ),
       ),
@@ -111,25 +173,18 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
 
   Widget _buildMembersList() {
     return Card(
-      margin: EdgeInsets.symmetric(horizontal: 16),
+      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: EdgeInsets.all(16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Members',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                TextButton.icon(
-                  icon: Icon(Icons.person_add),
-                  label: Text('Invite'),
-                  onPressed: () => _showInviteMemberDialog(context),
-                ),
-              ],
+          ListTile(
+            title:
+                Text('Members', style: Theme.of(context).textTheme.titleLarge),
+            trailing: IconButton(
+              icon: Icon(Icons.person_add),
+              onPressed: () => _showInviteMemberDialog(context),
             ),
           ),
           ListView.builder(
@@ -140,11 +195,20 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
               final member = _members[index];
               return ListTile(
                 leading: CircleAvatar(
-                  child: Text(member.name[0].toUpperCase()),
+                  backgroundImage: member.profileImageUrl != null
+                      ? NetworkImage(member.profileImageUrl!)
+                      : null,
+                  child: member.profileImageUrl == null
+                      ? Text(member.name[0].toUpperCase())
+                      : null,
+                  backgroundColor: member.profileImageUrl == null
+                      ? Colors.primaries[index % Colors.primaries.length]
+                      : null,
                 ),
                 title: Text(member.name),
                 subtitle: Text(member.email),
-                trailing: member.uid != widget.group.creatorId
+                trailing: (widget.group.creatorId == _currentUserId &&
+                        member.uid != _currentUserId)
                     ? IconButton(
                         icon: Icon(Icons.remove_circle_outline),
                         onPressed: () => _showRemoveMemberDialog(member),
@@ -168,14 +232,20 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
           title: Text('Invite Member'),
           content: TextField(
             controller: _controller,
-            decoration: InputDecoration(hintText: "Enter member's email"),
+            decoration: InputDecoration(
+              hintText: "Enter member's email",
+              prefixIcon: Icon(Icons.email),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
           ),
           actions: <Widget>[
             TextButton(
               child: Text('Cancel'),
               onPressed: () => Navigator.of(context).pop(),
             ),
-            TextButton(
+            ElevatedButton(
               child: Text('Invite'),
               onPressed: () async {
                 final email = _controller.text;
@@ -186,7 +256,6 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('Invitation sent successfully'),
-                        duration: Duration(seconds: 2),
                         behavior: SnackBarBehavior.floating,
                       ),
                     );
@@ -195,7 +264,6 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('Failed to send invitation'),
-                        duration: Duration(seconds: 2),
                         behavior: SnackBarBehavior.floating,
                       ),
                     );
@@ -222,8 +290,11 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
               child: Text('Cancel'),
               onPressed: () => Navigator.of(context).pop(),
             ),
-            TextButton(
+            ElevatedButton(
               child: Text('Remove'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+              ),
               onPressed: () async {
                 try {
                   await _groupService.removeMember(widget.group.id, member.uid);
@@ -231,7 +302,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Member removed successfully'),
-                      duration: Duration(seconds: 2),
+                      behavior: SnackBarBehavior.floating,
                     ),
                   );
                   _loadMembers();
@@ -257,7 +328,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Expense deleted successfully'),
-          duration: Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
         ),
       );
     } catch (e) {
