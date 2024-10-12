@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:splitwise/services/auth_service.dart';
+import 'package:splitwise/utils/app_color.dart';
 import 'package:splitwise/widgets/custom_text_field.dart';
 import 'package:splitwise/widgets/custom_button.dart';
 
@@ -49,7 +50,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Sign Up')),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
@@ -58,6 +58,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                SizedBox(height: 48),
+                Text(
+                  'Create Account',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 32),
                 CustomTextField(
                   labelText: 'Name',
                   onSaved: (value) => _name = value!,
@@ -97,10 +107,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
                 SizedBox(height: 24),
                 CustomButton(
+                  color: AppColors.accentMain,
                   onPressed: _isLoading ? null : _submit,
                   child: _isLoading
                       ? CircularProgressIndicator(color: Colors.white)
                       : Text('Sign Up'),
+                ),
+                SizedBox(height: 16),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('Already have an account? Log in'),
                 ),
               ],
             ),

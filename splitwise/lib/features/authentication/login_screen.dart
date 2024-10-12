@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:splitwise/services/auth_service.dart';
 import 'package:splitwise/features/authentication/signup_screen.dart';
 import 'package:splitwise/features/authentication/forgot_password_screen.dart';
+import 'package:splitwise/utils/app_color.dart';
 import 'package:splitwise/widgets/custom_text_field.dart';
 import 'package:splitwise/widgets/custom_button.dart';
 import 'package:splitwise/models/user.dart';
@@ -79,6 +80,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 SizedBox(height: 24),
                 CustomButton(
                   onPressed: _isLoading ? null : _submit,
+                  color: AppColors.accentMain,
                   child: _isLoading
                       ? CircularProgressIndicator(color: Colors.white)
                       : Text('Log In'),
@@ -89,14 +91,20 @@ class _LoginScreenState extends State<LoginScreen> {
                     context,
                     MaterialPageRoute(builder: (_) => SignUpScreen()),
                   ),
-                  child: Text('Don\'t have an account? Sign Up'),
+                  child: Text(
+                    'Don\'t have an account? Sign Up',
+                    style: TextStyle(color: AppColors.textMain),
+                  ),
                 ),
                 TextButton(
                   onPressed: () => Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => ForgotPasswordScreen()),
                   ),
-                  child: Text('Forgot Password?'),
+                  child: Text(
+                    'Forgot Password?',
+                    style: TextStyle(color: AppColors.textMain),
+                  ),
                 ),
               ],
             ),

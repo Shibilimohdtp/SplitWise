@@ -67,20 +67,19 @@ class UserService {
     return downloadUrl;
   }
 
-  Future<void> updateUserProfile(User user, {File? profileImage}) async {
-    String? profileImageUrl;
-    if (profileImage != null) {
-      profileImageUrl = await uploadProfileImage(user.uid, profileImage);
-    }
-
+  Future<void> updateUserProfile(User user) async {
     Map<String, dynamic> updateData = {
       'name': user.name,
       'username': user.username,
     };
-    if (profileImageUrl != null) {
-      updateData['profileImageUrl'] = profileImageUrl;
-    }
     await _firestore.collection('users').doc(user.uid).update(updateData);
+  }
+
+  Future<void> updateProfileImage(String userId, File imageFile) async {
+    String profileImageUrl = await uploadProfileImage(userId, imageFile);
+    await _firestore.collection('users').doc(userId).update({
+      'profileImageUrl': profileImageUrl,
+    });
   }
 
   Future<String?> getProfileImageUrl(String userId) async {

@@ -9,6 +9,7 @@ import 'package:splitwise/services/user_service.dart';
 import 'package:splitwise/widgets/custom_text_field.dart';
 import 'package:splitwise/widgets/custom_button.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:splitwise/utils/app_color.dart';
 import 'dart:io';
 
 class AddExpenseScreen extends StatefulWidget {
@@ -62,40 +63,6 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     });
   }
 
-  void _submit() async {
-    if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save();
-      final authService = Provider.of<AuthService>(context, listen: false);
-      final settingsService =
-          Provider.of<SettingsService>(context, listen: false);
-
-      final splitDetails = _calculateSplitDetails();
-
-      final expense = Expense(
-        id: '',
-        groupId: widget.group.id,
-        payerId: authService.currentUser!.uid,
-        amount: _amount,
-        currency: settingsService.currency,
-        description: _description,
-        date: DateTime.now(),
-        splitDetails: splitDetails,
-        category: _category,
-        comment: _comment,
-        splitMethod: _splitMethod,
-      );
-
-      try {
-        await _expenseService.addExpense(expense, receiptImage: _receiptImage);
-        Navigator.pop(context);
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to add expense. Please try again.')),
-        );
-      }
-    }
-  }
-
   Map<String, double> _calculateSplitDetails() {
     final activeParticipants = _participants.entries
         .where((entry) => entry.value)
@@ -124,6 +91,245 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     }
   }
 
+  @override
+  Widget build(BuildContext context) {
+    final settingsService = Provider.of<SettingsService>(context);
+
+    return Scaffold(
+      appBar: AppBar(
+        title:
+            Text('Add Expense', style: TextStyle(color: AppColors.textLight)),
+        backgroundColor: AppColors.primaryDark,
+        elevation: 0,
+      ),
+      body: Container(
+        color: AppColors.backgroundLight,
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            padding: EdgeInsets.all(16),
+            children: [
+              _buildExpenseCard(),
+              SizedBox(height: 16),
+              _buildParticipantsCard(),
+              SizedBox(height: 16),
+              _buildSplitMethodCard(),
+              SizedBox(height: 16),
+              _buildAdditionalDetailsCard(),
+              SizedBox(height: 24),
+              CustomButton(
+                onPressed: _submit,
+                child: Text(
+                  'Add Expense',
+                  style: TextStyle(color: AppColors.textLight),
+                ),
+                color: AppColors.primaryMain,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExpenseCard() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Expense Details',
+                style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textMain)),
+            SizedBox(height: 16),
+            CustomTextField(
+              labelText: 'Description',
+              onSaved: (value) => _description = value!,
+              validator: (value) =>
+                  value!.isEmpty ? 'Please enter a description' : null,
+              fillColor: AppColors.backgroundLight,
+            ),
+            SizedBox(height: 16),
+            CustomTextField(
+              labelText: 'Amount (${context.read<SettingsService>().currency})',
+              keyboardType: TextInputType.number,
+              onSaved: (value) => _amount = double.parse(value!),
+              validator: (value) =>
+                  value!.isEmpty ? 'Please enter an amount' : null,
+              fillColor: AppColors.backgroundLight,
+            ),
+            SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              value: _category,
+              items: _categories.map((category) {
+                return DropdownMenuItem(
+                  value: category,
+                  child: Text(category),
+                );
+              }).toList(),
+              onChanged: (value) => setState(() => _category = value!),
+              decoration: InputDecoration(
+                labelText: 'Category',
+                filled: true,
+                fillColor: AppColors.backgroundLight,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildParticipantsCard() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Participants',
+                style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textMain)),
+            SizedBox(height: 8),
+            ..._buildParticipantsList(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSplitMethodCard() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Split Method',
+                style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textMain)),
+            SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              value: _splitMethod,
+              items: _splitMethods.map((method) {
+                return DropdownMenuItem(
+                  value: method,
+                  child: Text(method),
+                );
+              }).toList(),
+              onChanged: (value) => setState(() => _splitMethod = value!),
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: AppColors.backgroundLight,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+            if (_splitMethod != 'Equal') ...[
+              SizedBox(height: 16),
+              Text('Split Details:',
+                  style: TextStyle(fontSize: 16, color: AppColors.textMain)),
+              _buildSplitInputs(),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAdditionalDetailsCard() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Additional Details',
+                style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textMain)),
+            SizedBox(height: 16),
+            CustomTextField(
+              labelText: 'Comment (Optional)',
+              maxLines: 3,
+              onSaved: (value) => _comment = value!,
+              fillColor: AppColors.backgroundLight,
+            ),
+            SizedBox(height: 16),
+            ElevatedButton.icon(
+              icon: Icon(Icons.camera_alt, color: AppColors.textLight),
+              label: Text('Upload Receipt',
+                  style: TextStyle(color: AppColors.textLight)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryMain,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
+              ),
+              onPressed: () async {
+                final ImagePicker _picker = ImagePicker();
+                final XFile? image =
+                    await _picker.pickImage(source: ImageSource.gallery);
+                if (image != null) {
+                  setState(() {
+                    _receiptImage = File(image.path);
+                  });
+                }
+              },
+            ),
+            if (_receiptImage != null) ...[
+              SizedBox(height: 8),
+              Text('Receipt image selected',
+                  style: TextStyle(color: AppColors.secondaryMain)),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildParticipantsList() {
+    return widget.group.members.map((memberId) {
+      return FutureBuilder<String>(
+        future: _userService.getUserName(memberId),
+        builder: (context, snapshot) {
+          final userName = snapshot.data ?? 'Loading...';
+          return CheckboxListTile(
+            title: Text(userName, style: TextStyle(color: AppColors.textMain)),
+            value: _participants[memberId],
+            onChanged: (bool? value) {
+              setState(() {
+                _participants[memberId] = value!;
+              });
+            },
+            activeColor: AppColors.textDark,
+          );
+        },
+      );
+    }).toList();
+  }
+
   Widget _buildSplitInputs() {
     switch (_splitMethod) {
       case 'Exact':
@@ -149,21 +355,21 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
                 child: Row(
                   children: [
-                    Expanded(child: Text(userName)),
+                    Expanded(
+                        child: Text(userName,
+                            style: TextStyle(color: AppColors.textMain))),
                     SizedBox(width: 16),
                     Expanded(
-                      child: TextFormField(
+                      child: CustomTextField(
                         keyboardType: TextInputType.number,
-                        decoration: InputDecoration(
-                          labelText: 'Amount',
-                          border: OutlineInputBorder(),
-                        ),
+                        labelText: 'Amount',
                         onChanged: (value) {
                           setState(() {
                             _customSplitAmounts[memberId] =
                                 double.tryParse(value) ?? 0;
                           });
                         },
+                        fillColor: AppColors.backgroundLight,
                       ),
                     ),
                   ],
@@ -189,22 +395,22 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
                 child: Row(
                   children: [
-                    Expanded(child: Text(userName)),
+                    Expanded(
+                        child: Text(userName,
+                            style: TextStyle(color: AppColors.textMain))),
                     SizedBox(width: 16),
                     Expanded(
-                      child: TextFormField(
+                      child: CustomTextField(
                         keyboardType: TextInputType.number,
-                        decoration: InputDecoration(
-                          labelText: 'Percentage',
-                          border: OutlineInputBorder(),
-                          suffixText: '%',
-                        ),
+                        labelText: 'Percentage',
+                        suffixText: '%',
                         onChanged: (value) {
                           setState(() {
                             _percentageSplits[memberId] =
                                 double.tryParse(value) ?? 0;
                           });
                         },
+                        fillColor: AppColors.backgroundLight,
                       ),
                     ),
                   ],
@@ -230,20 +436,20 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
                 child: Row(
                   children: [
-                    Expanded(child: Text(userName)),
+                    Expanded(
+                        child: Text(userName,
+                            style: TextStyle(color: AppColors.textMain))),
                     SizedBox(width: 16),
                     Expanded(
-                      child: TextFormField(
+                      child: CustomTextField(
                         keyboardType: TextInputType.number,
-                        decoration: InputDecoration(
-                          labelText: 'Shares',
-                          border: OutlineInputBorder(),
-                        ),
+                        labelText: 'Shares',
                         onChanged: (value) {
                           setState(() {
                             _shareSplits[memberId] = int.tryParse(value) ?? 1;
                           });
                         },
+                        fillColor: AppColors.backgroundLight,
                       ),
                     ),
                   ],
@@ -257,115 +463,39 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final settingsService = Provider.of<SettingsService>(context);
+  void _submit() async {
+    if (_formKey.currentState!.validate()) {
+      _formKey.currentState!.save();
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final settingsService =
+          Provider.of<SettingsService>(context, listen: false);
 
-    return Scaffold(
-      appBar: AppBar(title: Text('Add Expense')),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: EdgeInsets.all(16),
-          children: [
-            CustomTextField(
-              labelText: 'Description',
-              onSaved: (value) => _description = value!,
-              validator: (value) =>
-                  value!.isEmpty ? 'Please enter a description' : null,
-            ),
-            SizedBox(height: 16),
-            CustomTextField(
-              labelText: 'Amount (${settingsService.currency})',
-              keyboardType: TextInputType.number,
-              onSaved: (value) => _amount = double.parse(value!),
-              validator: (value) =>
-                  value!.isEmpty ? 'Please enter an amount' : null,
-            ),
-            SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              value: _category,
-              items: _categories.map((category) {
-                return DropdownMenuItem(
-                  value: category,
-                  child: Text(category),
-                );
-              }).toList(),
-              onChanged: (value) => setState(() => _category = value!),
-              decoration: InputDecoration(labelText: 'Category'),
-            ),
-            SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              value: _splitMethod,
-              items: _splitMethods.map((method) {
-                return DropdownMenuItem(
-                  value: method,
-                  child: Text(method),
-                );
-              }).toList(),
-              onChanged: (value) => setState(() => _splitMethod = value!),
-              decoration: InputDecoration(labelText: 'Split Method'),
-            ),
-            SizedBox(height: 16),
-            Text('Participants:',
-                style: Theme.of(context).textTheme.titleMedium),
-            ...widget.group.members.map((memberId) {
-              return FutureBuilder<String>(
-                future: _userService.getUserName(memberId),
-                builder: (context, snapshot) {
-                  final userName = snapshot.data ?? 'Loading...';
-                  return CheckboxListTile(
-                    title: Text(userName),
-                    value: _participants[memberId],
-                    onChanged: (bool? value) {
-                      setState(() {
-                        _participants[memberId] = value!;
-                      });
-                    },
-                  );
-                },
-              );
-            }),
-            if (_splitMethod != 'Equal') ...[
-              SizedBox(height: 16),
-              Text('Split Details:',
-                  style: Theme.of(context).textTheme.titleMedium),
-              _buildSplitInputs(),
-            ],
-            SizedBox(height: 16),
-            CustomTextField(
-              labelText: 'Comment (Optional)',
-              maxLines: 3,
-              onSaved: (value) => _comment = value!,
-            ),
-            SizedBox(height: 16),
-            ElevatedButton.icon(
-              icon: Icon(Icons.camera_alt),
-              label: Text('Upload Receipt'),
-              onPressed: () async {
-                final ImagePicker _picker = ImagePicker();
-                final XFile? image =
-                    await _picker.pickImage(source: ImageSource.gallery);
-                if (image != null) {
-                  setState(() {
-                    _receiptImage = File(image.path);
-                  });
-                }
-              },
-            ),
-            if (_receiptImage != null) ...[
-              SizedBox(height: 8),
-              Text('Receipt image selected',
-                  style: TextStyle(color: Colors.green)),
-            ],
-            SizedBox(height: 24),
-            CustomButton(
-              onPressed: _submit,
-              child: Text('Add Expense'),
-            ),
-          ],
-        ),
-      ),
-    );
+      final splitDetails = _calculateSplitDetails();
+
+      final expense = Expense(
+        id: '',
+        groupId: widget.group.id,
+        payerId: authService.currentUser!.uid,
+        amount: _amount,
+        currency: settingsService.currency,
+        description: _description,
+        date: DateTime.now(),
+        splitDetails: splitDetails,
+        category: _category,
+        comment: _comment,
+        splitMethod: _splitMethod,
+      );
+
+      try {
+        await _expenseService.addExpense(expense, receiptImage: _receiptImage);
+        Navigator.pop(context);
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Failed to add expense. Please try again.'),
+              backgroundColor: AppColors.accentMain),
+        );
+      }
+    }
   }
 }

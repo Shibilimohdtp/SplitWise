@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:splitwise/services/auth_service.dart';
+import 'package:splitwise/utils/app_color.dart';
 import 'package:splitwise/widgets/custom_text_field.dart';
 import 'package:splitwise/widgets/custom_button.dart';
 
@@ -64,6 +65,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 ),
                 SizedBox(height: 24),
                 CustomButton(
+                  color: AppColors.accentMain,
                   onPressed: _isLoading ? null : _submit,
                   child: _isLoading
                       ? CircularProgressIndicator(color: Colors.white)

@@ -6,7 +6,7 @@ import 'package:splitwise/services/auth_service.dart';
 import 'package:splitwise/services/user_service.dart';
 import 'package:splitwise/models/user.dart';
 import 'package:splitwise/widgets/custom_text_field.dart';
-import 'package:splitwise/widgets/custom_button.dart';
+import 'package:splitwise/utils/app_color.dart';
 
 class ProfileScreen extends StatefulWidget {
   @override
@@ -18,9 +18,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late TextEditingController _usernameController;
   late TextEditingController _emailController;
   final UserService _userService = UserService();
-  File? _imageFile;
   String? _profileImageUrl;
   bool _isLoading = false;
+  bool _isUpdating = false;
 
   @override
   void initState() {
@@ -53,35 +53,74 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.dispose();
   }
 
-  Future<void> _pickImage() async {
+  Future<void> _pickAndUploadImage() async {
     final ImagePicker _picker = ImagePicker();
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
-      setState(() {
-        _imageFile = File(image.path);
-      });
+      setState(() => _isUpdating = true);
+      try {
+        final authService = Provider.of<AuthService>(context, listen: false);
+        final userId = authService.currentUser!.uid;
+        await _userService.updateProfileImage(userId, File(image.path));
+        String? newImageUrl = await _userService.getProfileImageUrl(userId);
+        setState(() {
+          _profileImageUrl = newImageUrl;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Profile picture updated successfully')),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content:
+                  Text('Failed to update profile picture: ${e.toString()}')),
+        );
+      }
+      setState(() => _isUpdating = false);
     }
   }
 
   Widget _buildProfileImage() {
-    if (_isLoading) {
-      return CircularProgressIndicator();
-    } else if (_imageFile != null) {
-      return CircleAvatar(
-        radius: 60,
-        backgroundImage: FileImage(_imageFile!),
-      );
-    } else if (_profileImageUrl != null) {
-      return CircleAvatar(
-        radius: 60,
-        backgroundImage: NetworkImage(_profileImageUrl!),
-      );
-    } else {
-      return CircleAvatar(
-        radius: 60,
-        child: Icon(Icons.person, size: 60),
-      );
-    }
+    return Stack(
+      children: [
+        CircleAvatar(
+          radius: 60,
+          backgroundColor: AppColors.backgroundLight,
+          backgroundImage:
+              _profileImageUrl != null ? NetworkImage(_profileImageUrl!) : null,
+          child: _profileImageUrl == null
+              ? Icon(Icons.person, size: 60, color: AppColors.primaryMain)
+              : null,
+        ),
+        Positioned(
+          bottom: 0,
+          right: 0,
+          child: GestureDetector(
+            onTap: _pickAndUploadImage,
+            child: Container(
+              padding: EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.accentMain,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.camera_alt, color: Colors.white, size: 20),
+            ),
+          ),
+        ),
+        if (_isUpdating)
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.5),
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              ),
+            ),
+          ),
+      ],
+    );
   }
 
   @override
@@ -89,86 +128,120 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final authService = Provider.of<AuthService>(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Profile'),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            GestureDetector(
-              onTap: _pickImage,
-              child: _buildProfileImage(),
-            ),
-            SizedBox(height: 16),
-            Text(
-              'Tap to change profile picture',
-              style: TextStyle(color: Colors.grey),
-            ),
-            SizedBox(height: 24),
-            TextField(
-              controller: _nameController,
-              decoration: InputDecoration(labelText: 'Name'),
-            ),
-            SizedBox(height: 16),
-            TextField(
-              controller: _usernameController,
-              decoration: InputDecoration(labelText: 'Username'),
-            ),
-            SizedBox(height: 16),
-            TextField(
-              controller: _emailController,
-              decoration: InputDecoration(labelText: 'Email'),
-              readOnly: true,
-            ),
-            SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _isLoading
-                  ? null
-                  : () async {
-                      setState(() => _isLoading = true);
-                      User updatedUser = User(
-                        uid: authService.currentUser!.uid,
-                        name: _nameController.text,
-                        username: _usernameController.text,
-                        email: _emailController.text,
-                      );
-                      try {
-                        await _userService.updateUserProfile(updatedUser,
-                            profileImage: _imageFile);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                              content: Text('Profile updated successfully')),
-                        );
-                        // Refresh the profile image URL after update
-                        String? newImageUrl = await _userService
-                            .getProfileImageUrl(updatedUser.uid);
-                        setState(() {
-                          _profileImageUrl = newImageUrl;
-                          _imageFile = null; // Clear the local file reference
-                        });
-                      } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                              content: Text(
-                                  'Failed to update profile: ${e.toString()}')),
-                        );
-                      }
-                      setState(() => _isLoading = false);
-                    },
-              child: _isLoading
-                  ? CircularProgressIndicator(color: Colors.white)
-                  : Text('Save Changes'),
-              style: ElevatedButton.styleFrom(
-                foregroundColor: Colors.white,
-                backgroundColor: Theme.of(context).primaryColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8.0),
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 200,
+            floating: false,
+            pinned: true,
+            flexibleSpace: FlexibleSpaceBar(
+              title: Text('Profile', style: TextStyle(color: Colors.white)),
+              background: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [AppColors.primaryLight, AppColors.primaryMain],
+                  ),
                 ),
               ),
             ),
+          ),
+          SliverToBoxAdapter(
+            child: _isLoading
+                ? Center(child: CircularProgressIndicator())
+                : Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        _buildProfileImage(),
+                        SizedBox(height: 24),
+                        _buildInfoCard(),
+                        SizedBox(height: 24),
+                        _buildSaveButton(authService),
+                      ],
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoCard() {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            CustomTextField(
+              controller: _nameController,
+              labelText: 'Name',
+              // prefixIcon: Icon(Icons.person, color: AppColors.primaryMain),
+            ),
+            SizedBox(height: 16),
+            CustomTextField(
+              controller: _usernameController,
+              labelText: 'Username',
+              // prefixIcon:
+              //     Icon(Icons.alternate_email, color: AppColors.primaryMain),
+            ),
+            SizedBox(height: 16),
+            CustomTextField(
+              controller: _emailController,
+              labelText: 'Email',
+              readOnly: true,
+              // prefixIcon: Icon(Icons.email, color: AppColors.primaryMain),
+            ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSaveButton(AuthService authService) {
+    return ElevatedButton(
+      onPressed: _isLoading || _isUpdating
+          ? null
+          : () async {
+              setState(() => _isUpdating = true);
+              User updatedUser = User(
+                uid: authService.currentUser!.uid,
+                name: _nameController.text,
+                username: _usernameController.text,
+                email: _emailController.text,
+              );
+              try {
+                await _userService.updateUserProfile(updatedUser);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Profile updated successfully')),
+                );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                      content:
+                          Text('Failed to update profile: ${e.toString()}')),
+                );
+              }
+              setState(() => _isUpdating = false);
+            },
+      child: _isUpdating
+          ? SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                  color: Colors.white, strokeWidth: 2),
+            )
+          : Text('Save Changes'),
+      style: ElevatedButton.styleFrom(
+        foregroundColor: Colors.white,
+        backgroundColor: AppColors.accentMain,
+        padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(30),
         ),
       ),
     );

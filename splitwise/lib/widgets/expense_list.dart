@@ -6,6 +6,7 @@ import 'package:splitwise/services/expense_service.dart';
 import 'package:splitwise/services/user_service.dart';
 import 'package:splitwise/services/settings_service.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:splitwise/utils/app_color.dart';
 
 class ExpenseList extends StatefulWidget {
   final String groupId;
@@ -42,11 +43,21 @@ class _ExpenseListState extends State<ExpenseList> {
             ),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return Center(child: CircularProgressIndicator());
+                return Center(
+                  child: CircularProgressIndicator(
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(AppColors.accentMain),
+                  ),
+                );
               }
 
               if (snapshot.hasError) {
-                return Center(child: Text('Error: ${snapshot.error}'));
+                return Center(
+                  child: Text(
+                    'Error: ${snapshot.error}',
+                    style: TextStyle(color: AppColors.textMain),
+                  ),
+                );
               }
 
               if (!snapshot.hasData || snapshot.data!.isEmpty) {
@@ -54,11 +65,13 @@ class _ExpenseListState extends State<ExpenseList> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.receipt_long, size: 64, color: Colors.grey),
-                      SizedBox(height: 16),
                       Text(
                         'No expenses yet',
-                        style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: AppColors.textLight,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
@@ -92,12 +105,12 @@ class _ExpenseListState extends State<ExpenseList> {
 
   Widget _buildFilterBar(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.backgroundLight,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: AppColors.textMain.withOpacity(0.05),
             blurRadius: 10,
             offset: Offset(0, 5),
           ),
@@ -106,40 +119,52 @@ class _ExpenseListState extends State<ExpenseList> {
       child: Row(
         children: [
           Expanded(
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: _selectedCategory,
-                hint: Text('Category'),
-                isExpanded: true,
-                icon: Icon(Icons.arrow_drop_down),
-                onChanged: (String? newValue) {
-                  setState(() {
-                    _selectedCategory = newValue;
-                  });
-                },
-                items: [
-                  'All',
-                  'Food',
-                  'Transport',
-                  'Entertainment',
-                  'Utilities',
-                  'Rent',
-                  'Other'
-                ].map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value == 'All' ? null : value,
-                    child: Text(value),
-                  );
-                }).toList(),
+            flex: 2,
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: AppColors.primaryLight,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: _selectedCategory,
+                  hint: Text('Category',
+                      style: TextStyle(color: AppColors.textLight)),
+                  isExpanded: true,
+                  icon: Icon(Icons.arrow_drop_down, color: AppColors.textMain),
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      _selectedCategory = newValue;
+                    });
+                  },
+                  items: [
+                    'All',
+                    'Food',
+                    'Transport',
+                    'Entertainment',
+                    'Utilities',
+                    'Rent',
+                    'Other'
+                  ].map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value == 'All' ? null : value,
+                      child: Text(value,
+                          style: TextStyle(color: AppColors.textMain)),
+                    );
+                  }).toList(),
+                ),
               ),
             ),
           ),
+          SizedBox(width: 12),
           IconButton(
-            icon: Icon(Icons.date_range),
+            icon: Icon(Icons.date_range, color: AppColors.accentMain),
             onPressed: () => _selectDateRange(context),
           ),
+          SizedBox(width: 8),
           IconButton(
-            icon: Icon(Icons.person),
+            icon: Icon(Icons.person, color: AppColors.accentMain),
             onPressed: () => _selectMember(context),
           ),
         ],
@@ -149,7 +174,6 @@ class _ExpenseListState extends State<ExpenseList> {
 
   Widget _buildExpenseCard(BuildContext context, Expense expense,
       String creatorName, SettingsService settingsService) {
-    final theme = Theme.of(context);
     final categoryIcon = _getCategoryIcon(expense.category);
 
     return Slidable(
@@ -170,7 +194,7 @@ class _ExpenseListState extends State<ExpenseList> {
       child: Card(
         margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: InkWell(
           onTap: () => _showExpenseDetails(
               context,
@@ -186,10 +210,10 @@ class _ExpenseListState extends State<ExpenseList> {
                 Container(
                   padding: EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: theme.primaryColor.withOpacity(0.1),
+                    color: AppColors.primaryLight,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(categoryIcon, color: theme.primaryColor),
+                  child: Icon(categoryIcon, color: AppColors.accentMain),
                 ),
                 SizedBox(width: 16),
                 Expanded(
@@ -198,27 +222,33 @@ class _ExpenseListState extends State<ExpenseList> {
                     children: [
                       Text(
                         expense.description,
-                        style: theme.textTheme.titleMedium!
-                            .copyWith(fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textMain,
+                        ),
                       ),
                       SizedBox(height: 4),
                       Text(
                         'Paid by $creatorName',
-                        style: theme.textTheme.bodySmall,
+                        style:
+                            TextStyle(fontSize: 14, color: AppColors.textLight),
                       ),
                       SizedBox(height: 4),
                       Text(
                         DateFormat('MMM d, yyyy').format(expense.date),
-                        style: theme.textTheme.bodySmall,
+                        style:
+                            TextStyle(fontSize: 14, color: AppColors.textLight),
                       ),
                     ],
                   ),
                 ),
                 Text(
                   '${settingsService.currency}${expense.amount.toStringAsFixed(2)}',
-                  style: theme.textTheme.titleMedium!.copyWith(
+                  style: TextStyle(
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: theme.primaryColor,
+                    color: AppColors.accentMain,
                   ),
                 ),
               ],
@@ -261,12 +291,12 @@ class _ExpenseListState extends State<ExpenseList> {
         return Theme(
           data: theme.copyWith(
             colorScheme: theme.colorScheme.copyWith(
-              primary: theme.primaryColor,
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Colors.black,
+              primary: AppColors.accentMain,
+              onPrimary: AppColors.backgroundLight,
+              surface: AppColors.backgroundLight,
+              onSurface: AppColors.textMain,
             ),
-            dialogBackgroundColor: Colors.white,
+            dialogBackgroundColor: AppColors.backgroundLight,
           ),
           child: child!,
         );
@@ -288,8 +318,10 @@ class _ExpenseListState extends State<ExpenseList> {
       SnackBar(
         content: Text('Date range: $startFormatted - $endFormatted'),
         duration: Duration(seconds: 2),
+        backgroundColor: AppColors.accentMain,
         action: SnackBarAction(
           label: 'Clear',
+          textColor: AppColors.backgroundLight,
           onPressed: () {
             setState(() {
               _selectedDateRange = null;
@@ -338,8 +370,10 @@ class _ExpenseListState extends State<ExpenseList> {
         SnackBar(
           content: Text('Filtered by member: $memberName'),
           duration: Duration(seconds: 2),
+          backgroundColor: AppColors.accentMain,
           action: SnackBarAction(
             label: 'Clear',
+            textColor: AppColors.backgroundLight,
             onPressed: () {
               setState(() {
                 _selectedMemberId = null;
@@ -360,8 +394,9 @@ class _ExpenseListState extends State<ExpenseList> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: AppColors.backgroundLight,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (BuildContext context) {
         return DraggableScrollableSheet(
@@ -373,56 +408,99 @@ class _ExpenseListState extends State<ExpenseList> {
             return SingleChildScrollView(
               controller: controller,
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(24.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(expense.description,
-                        style: Theme.of(context).textTheme.titleLarge),
-                    SizedBox(height: 8),
                     Text(
-                        'Amount: ${settingsService.currency}${expense.amount.toStringAsFixed(2)}',
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold)),
-                    SizedBox(height: 8),
-                    Text('Paid by: $creatorName'),
-                    Text('Date: ${expense.date.toString().split(' ')[0]}'),
-                    Text('Category: ${expense.category}'),
-                    if (expense.comment != null && expense.comment!.isNotEmpty)
-                      Text('Comment: ${expense.comment}'),
+                      expense.description,
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textMain,
+                      ),
+                    ),
                     SizedBox(height: 16),
-                    Text('Split Details:',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text(
+                      'Amount: ${settingsService.currency}${expense.amount.toStringAsFixed(2)}',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.accentMain,
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    _buildDetailRow('Paid by', creatorName),
+                    _buildDetailRow(
+                        'Date', expense.date.toString().split(' ')[0]),
+                    _buildDetailRow('Category', expense.category),
+                    if (expense.comment != null && expense.comment!.isNotEmpty)
+                      _buildDetailRow('Comment', expense.comment!),
+                    SizedBox(height: 24),
+                    Text(
+                      'Split Details:',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textMain,
+                      ),
+                    ),
+                    SizedBox(height: 8),
                     FutureBuilder<List<Widget>>(
                       future: _buildSplitDetailsList(
                           expense, userService, settingsService),
                       builder: (context, snapshot) {
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
-                          return CircularProgressIndicator();
+                          return CircularProgressIndicator(
+                              color: AppColors.accentMain);
                         }
                         if (snapshot.hasError) {
-                          return Text('Error loading split details');
+                          return Text('Error loading split details',
+                              style: TextStyle(color: AppColors.textMain));
                         }
                         return Column(children: snapshot.data!);
                       },
                     ),
                     if (expense.receiptUrl != null) ...[
-                      SizedBox(height: 16),
-                      ElevatedButton(
-                        child: Text('View Receipt'),
+                      SizedBox(height: 24),
+                      ElevatedButton.icon(
+                        icon: Icon(Icons.receipt,
+                            color: AppColors.backgroundLight),
+                        label: Text(
+                          'View Receipt',
+                          style: TextStyle(color: AppColors.backgroundLight),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.accentMain,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 12),
+                        ),
                         onPressed: () {
                           // Implement receipt viewing logic here
-                          // You might want to open a new screen or show a dialog with the image
                         },
                       ),
                     ],
-                    SizedBox(height: 16),
+                    SizedBox(height: 24),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        ElevatedButton(
-                          child: Text('Close'),
+                        OutlinedButton(
+                          child: Text(
+                            'Close',
+                            style: TextStyle(color: AppColors.textMain),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: AppColors.textMain),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 24, vertical: 12),
+                          ),
                           onPressed: () {
                             Navigator.of(context).pop();
                           },
@@ -430,7 +508,14 @@ class _ExpenseListState extends State<ExpenseList> {
                         ElevatedButton(
                           child: Text('Delete'),
                           style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red),
+                            foregroundColor: AppColors.backgroundLight,
+                            backgroundColor: Colors.red,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 24, vertical: 12),
+                          ),
                           onPressed: () {
                             widget.onDeleteExpense(expense.id);
                             Navigator.of(context).pop();
@@ -448,20 +533,57 @@ class _ExpenseListState extends State<ExpenseList> {
     );
   }
 
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '$label: ',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppColors.textLight,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(color: AppColors.textMain),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<List<Widget>> _buildSplitDetailsList(Expense expense,
       UserService userService, SettingsService settingsService) async {
     List<Widget> splitDetailWidgets = [];
     for (var entry in expense.splitDetails.entries) {
       String userName = await userService.getUserName(entry.key);
       splitDetailWidgets.add(
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4.0),
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: AppColors.textLight.withOpacity(0.2),
+                width: 1,
+              ),
+            ),
+          ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(userName),
+              Text(userName, style: TextStyle(color: AppColors.textMain)),
               Text(
-                  '${settingsService.currency}${entry.value.toStringAsFixed(2)}'),
+                '${settingsService.currency}${entry.value.toStringAsFixed(2)}',
+                style: TextStyle(
+                  color: AppColors.accentMain,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ],
           ),
         ),

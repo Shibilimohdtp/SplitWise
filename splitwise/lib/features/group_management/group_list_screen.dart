@@ -12,6 +12,7 @@ import 'package:splitwise/features/settings/settings_screen.dart';
 import 'package:splitwise/features/profile/profile_screen.dart';
 import 'package:splitwise/features/notifications/notification_screen.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
+import 'package:splitwise/utils/app_color.dart';
 
 class GroupListScreen extends StatefulWidget {
   @override
@@ -80,29 +81,30 @@ class _GroupListScreenState extends State<GroupListScreen>
       expandedHeight: 200,
       floating: false,
       pinned: true,
+      backgroundColor: AppColors.primaryMain,
       flexibleSpace: FlexibleSpaceBar(
-        title: Text('My Groups', style: TextStyle(color: Colors.white)),
+        title: Text('My Groups',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         background: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                Theme.of(context).primaryColor,
-                Theme.of(context).primaryColor.withOpacity(0.8)
-              ],
+              colors: [AppColors.primaryLight, AppColors.primaryMain],
             ),
+          ),
+          child: Center(
+            child: Icon(Icons.group,
+                size: 80, color: Colors.white.withOpacity(0.3)),
           ),
         ),
       ),
       actions: [
         IconButton(
-          icon: Icon(Icons.notifications),
+          icon: Icon(Icons.notifications, color: Colors.white),
           onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => NotificationScreen()),
-            );
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => NotificationScreen()));
           },
         ),
       ],
@@ -117,139 +119,142 @@ class _GroupListScreenState extends State<GroupListScreen>
           context,
           MaterialPageRoute(builder: (_) => CreateGroupScreen()),
         ).then((_) => setState(() {})),
-        icon: Icon(Icons.add),
-        label: Text('Create Group'),
+        icon: Icon(Icons.add, color: Colors.white),
+        label: Text('Create Group', style: TextStyle(color: Colors.white)),
         tooltip: 'Create new group',
+        backgroundColor: AppColors.accentMain,
       ),
     );
   }
 
   Widget _buildDrawer(BuildContext context, AuthService authService) {
     return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: <Widget>[
-          FutureBuilder<Map<String, dynamic>>(
-            future: _userService.getUserData(authService.currentUser!.uid),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return DrawerHeader(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Theme.of(context).primaryColor,
-                        Theme.of(context).primaryColor.withOpacity(0.8)
-                      ],
-                    ),
-                  ),
-                  child: Center(child: CircularProgressIndicator()),
-                );
-              }
+      child: Container(
+        color: Colors.white,
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: <Widget>[
+            _buildDrawerHeader(authService),
+            _buildDrawerItem(
+                Icons.person, 'Profile', () => _navigateToProfile(context)),
+            _buildDrawerItem(
+                Icons.settings, 'Settings', () => _navigateToSettings(context)),
+            _buildDrawerItem(Icons.exit_to_app, 'Sign Out',
+                () => _signOut(context, authService)),
+          ],
+        ),
+      ),
+    );
+  }
 
-              final userData = snapshot.data ?? {};
-              final name = userData['name'] ?? 'User';
-              final email = userData['email'] ?? '';
-              final profileImageUrl = userData['profileImageUrl'];
+  Widget _buildDrawerHeader(AuthService authService) {
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _userService.getUserData(authService.currentUser!.uid),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return _buildLoadingDrawerHeader();
+        }
 
-              return DrawerHeader(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Theme.of(context).primaryColor,
-                      Theme.of(context).primaryColor.withOpacity(0.8)
-                    ],
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    CircleAvatar(
-                      radius: 40,
-                      backgroundImage: profileImageUrl != null
-                          ? NetworkImage(profileImageUrl)
-                          : null,
-                      child: profileImageUrl == null
-                          ? Icon(Icons.person, size: 30)
-                          : null,
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      name,
-                      style: TextStyle(color: Colors.white, fontSize: 18),
-                    ),
-                    Text(
-                      email,
-                      style: TextStyle(
-                          color: Colors.white.withOpacity(0.8), fontSize: 14),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.settings),
-            title: Text('Settings'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => SettingsScreen()),
-              );
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.person),
-            title: Text('Profile'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => ProfileScreen()),
-              ).then((_) {
-                // Refresh the drawer when returning from the profile screen
-                setState(() {});
-              });
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.exit_to_app),
-            title: Text('Sign Out'),
-            onTap: () async {
-              final confirmation = await showDialog<bool>(
-                context: context,
-                builder: (context) {
-                  return AlertDialog(
-                    title: Text('Sign Out'),
-                    content: Text('Are you sure you want to sign out?'),
-                    actions: <Widget>[
-                      TextButton(
-                        child: Text('Cancel'),
-                        onPressed: () => Navigator.pop(context, false),
-                      ),
-                      TextButton(
-                        child: Text('Sign Out'),
-                        onPressed: () => Navigator.pop(context, true),
-                      ),
-                    ],
-                  );
-                },
-              );
+        final userData = snapshot.data ?? {};
+        final name = userData['name'] ?? 'User';
+        final email = userData['email'] ?? '';
+        final profileImageUrl = userData['profileImageUrl'];
 
-              if (confirmation == true) {
-                await authService.signOut();
-                Navigator.pop(context);
-              }
-            },
+        return UserAccountsDrawerHeader(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [AppColors.primaryLight, AppColors.primaryMain],
+            ),
+          ),
+          accountName:
+              Text(name, style: TextStyle(fontWeight: FontWeight.bold)),
+          accountEmail: Text(email),
+          currentAccountPicture: GestureDetector(
+            onTap: () => _navigateToProfile(context),
+            child: CircleAvatar(
+              backgroundImage: profileImageUrl != null
+                  ? NetworkImage(profileImageUrl)
+                  : null,
+              backgroundColor: AppColors.secondaryLight,
+              child: profileImageUrl == null
+                  ? Icon(Icons.person, size: 40, color: Colors.white)
+                  : null,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildLoadingDrawerHeader() {
+    return DrawerHeader(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppColors.primaryLight, AppColors.primaryMain],
+        ),
+      ),
+      child: Center(child: CircularProgressIndicator(color: Colors.white)),
+    );
+  }
+
+  Widget _buildDrawerItem(IconData icon, String title, VoidCallback onTap) {
+    return ListTile(
+      leading: Icon(icon, color: AppColors.primaryMain),
+      title: Text(title, style: TextStyle(color: AppColors.textMain)),
+      onTap: onTap,
+    );
+  }
+
+  void _navigateToProfile(BuildContext context) {
+    Navigator.pop(context);
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => ProfileScreen()),
+    ).then((_) => setState(() {}));
+  }
+
+  void _navigateToSettings(BuildContext context) {
+    Navigator.pop(context);
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => SettingsScreen()),
+    );
+  }
+
+  Future<void> _signOut(BuildContext context, AuthService authService) async {
+    final confirmation = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Sign Out', style: TextStyle(color: AppColors.textMain)),
+        content: Text('Are you sure you want to sign out?',
+            style: TextStyle(color: AppColors.textLight)),
+        actions: <Widget>[
+          TextButton(
+            child: Text('Cancel', style: TextStyle(color: AppColors.textLight)),
+            onPressed: () => Navigator.pop(context, false),
+          ),
+          ElevatedButton(
+            child: Text('Sign Out'),
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              foregroundColor: Colors.white,
+              backgroundColor: Colors.red,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
           ),
         ],
       ),
     );
+
+    if (confirmation == true) {
+      await authService.signOut();
+      Navigator.pop(context);
+    }
   }
 
   Widget _buildFinancialOverview(String userId) {
@@ -261,7 +266,9 @@ class _GroupListScreenState extends State<GroupListScreen>
         }
 
         if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
+          return Center(
+              child: Text('Error: ${snapshot.error}',
+                  style: TextStyle(color: AppColors.textMain)));
         }
 
         final balance = snapshot.data!;
@@ -280,7 +287,10 @@ class _GroupListScreenState extends State<GroupListScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Financial Overview',
-                    style: Theme.of(context).textTheme.titleLarge),
+                    style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textMain)),
                 SizedBox(height: 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -306,15 +316,12 @@ class _GroupListScreenState extends State<GroupListScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+        Text(label, style: TextStyle(fontSize: 14, color: AppColors.textLight)),
         SizedBox(height: 4),
         Text(
           '${settingsService.currency}${amount.abs().toStringAsFixed(2)}',
           style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
+              fontSize: 18, fontWeight: FontWeight.bold, color: color),
         ),
       ],
     );
@@ -331,7 +338,9 @@ class _GroupListScreenState extends State<GroupListScreen>
 
         if (snapshot.hasError) {
           return SliverFillRemaining(
-              child: Center(child: Text('Error: ${snapshot.error}')));
+              child: Center(
+                  child: Text('Error: ${snapshot.error}',
+                      style: TextStyle(color: AppColors.textMain))));
         }
 
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
@@ -340,10 +349,11 @@ class _GroupListScreenState extends State<GroupListScreen>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.group_add, size: 64, color: Colors.grey),
+                  Icon(Icons.group_add, size: 64, color: AppColors.textLight),
                   SizedBox(height: 16),
                   Text('No groups found. Create one!',
-                      style: TextStyle(fontSize: 18, color: Colors.grey[600])),
+                      style:
+                          TextStyle(fontSize: 18, color: AppColors.textLight)),
                 ],
               ),
             ),
@@ -392,18 +402,20 @@ class _GroupListScreenState extends State<GroupListScreen>
                   Expanded(
                     child: Text(
                       group.name,
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textMain),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  Icon(Icons.chevron_right, color: Colors.grey),
+                  Icon(Icons.chevron_right, color: AppColors.textLight),
                 ],
               ),
               SizedBox(height: 8),
               Text(
                 group.description,
-                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                style: TextStyle(fontSize: 14, color: AppColors.textLight),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -414,7 +426,8 @@ class _GroupListScreenState extends State<GroupListScreen>
                   if (balanceSnapshot.connectionState ==
                       ConnectionState.waiting) {
                     return Text('Calculating balance...',
-                        style: TextStyle(fontSize: 14, color: Colors.grey));
+                        style: TextStyle(
+                            fontSize: 14, color: AppColors.textLight));
                   }
 
                   final balance = balanceSnapshot.data ?? 0;
@@ -427,7 +440,8 @@ class _GroupListScreenState extends State<GroupListScreen>
                     children: [
                       Text(
                         isPositive ? 'You are owed' : 'You owe',
-                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                        style:
+                            TextStyle(fontSize: 14, color: AppColors.textLight),
                       ),
                       Row(
                         children: [
