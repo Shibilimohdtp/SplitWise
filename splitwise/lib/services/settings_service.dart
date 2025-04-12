@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsService extends ChangeNotifier {
@@ -22,7 +22,9 @@ class SettingsService extends ChangeNotifier {
       _error = null;
     } catch (e) {
       _error = e.toString();
-      print("Error initializing settings: $e");
+      if (kDebugMode) {
+        print("Error initializing settings: $e");
+      }
     } finally {
       notifyListeners();
     }

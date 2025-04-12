@@ -50,7 +50,9 @@ class AuthService with ChangeNotifier {
         return newUser;
       }
     } catch (e) {
-      print(e.toString());
+      if (kDebugMode) {
+        print(e.toString());
+      }
       return null;
     }
     return null;
@@ -71,7 +73,9 @@ class AuthService with ChangeNotifier {
       }
       return null;
     } catch (e) {
-      print(e.toString());
+      if (kDebugMode) {
+        print(e.toString());
+      }
       return null;
     }
   }
@@ -84,8 +88,10 @@ class AuthService with ChangeNotifier {
       });
       notifyListeners();
     } catch (e) {
-      print(e.toString());
-      throw e;
+      if (kDebugMode) {
+        print(e.toString());
+      }
+      rethrow;
     }
   }
 
@@ -94,7 +100,9 @@ class AuthService with ChangeNotifier {
       await _auth.signOut();
       notifyListeners();
     } catch (e) {
-      print(e.toString());
+      if (kDebugMode) {
+        print(e.toString());
+      }
     }
   }
 
@@ -102,8 +110,10 @@ class AuthService with ChangeNotifier {
     try {
       await _auth.sendPasswordResetEmail(email: email);
     } catch (e) {
-      print(e.toString());
-      throw e;
+      if (kDebugMode) {
+        print(e.toString());
+      }
+      rethrow;
     }
   }
 }

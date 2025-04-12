@@ -4,9 +4,71 @@ import 'package:splitwise/features/settings/settings_screen.dart';
 import 'package:splitwise/services/auth_service.dart';
 import 'package:splitwise/services/notification_service.dart';
 import 'package:splitwise/models/notification.dart' as model;
+import 'package:splitwise/utils/app_color.dart';
+import 'package:intl/intl.dart';
 
-class NotificationScreen extends StatelessWidget {
+class NotificationScreen extends StatefulWidget {
+  const NotificationScreen({super.key});
+
+  @override
+  _NotificationScreenState createState() => _NotificationScreenState();
+}
+
+class _NotificationScreenState extends State<NotificationScreen>
+    with SingleTickerProviderStateMixin {
   final NotificationService _notificationService = NotificationService();
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    );
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  String _formatTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if (difference.inDays == 0) {
+      return DateFormat('h:mm a').format(dateTime);
+    } else if (difference.inDays == 1) {
+      return 'Yesterday';
+    } else if (difference.inDays <= 7) {
+      return DateFormat('EEEE').format(dateTime);
+    } else {
+      return DateFormat('MMM d').format(dateTime);
+    }
+  }
+
+  Widget _buildNotificationIcon() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.primaryMain.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Icon(
+        Icons.notifications_outlined,
+        color: AppColors.primaryMain,
+        size: 24,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -14,85 +76,167 @@ class NotificationScreen extends StatelessWidget {
     final userId = authService.currentUser!.uid;
 
     return Scaffold(
+      backgroundColor: AppColors.backgroundLight,
       appBar: AppBar(
-        title: Text(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: const Text(
           'Notifications',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 24,
+            color: AppColors.textMain,
+          ),
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.settings),
+            icon: const Icon(Icons.settings_outlined, color: Colors.white),
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => SettingsScreen()),
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
               );
             },
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: StreamBuilder<List<model.Notification>>(
         stream: _notificationService.getUserNotifications(userId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(
-              child: CircularProgressIndicator(),
-            );
-          }
-
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.notifications_off,
-                    size: 100,
-                    color: Colors.grey[400],
-                  ),
-                  SizedBox(height: 20),
-                  Text(
-                    "You're all caught up!",
-                    style: TextStyle(fontSize: 18, color: Colors.grey[600]),
-                  ),
-                ],
+            return const Center(
+              child: CircularProgressIndicator(
+                valueColor:
+                    AlwaysStoppedAnimation<Color>(AppColors.primaryMain),
               ),
             );
           }
 
-          return ListView.builder(
-            itemCount: snapshot.data!.length,
-            itemBuilder: (context, index) {
-              final notification = snapshot.data![index];
-              return Card(
-                margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return FadeTransition(
+              opacity: _fadeAnimation,
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryMain.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.notifications_off_outlined,
+                        size: 48,
+                        color: AppColors.primaryMain,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    const Text(
+                      "You're all caught up!",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textMain,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      "No new notifications at the moment",
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: AppColors.textLight,
+                      ),
+                    ),
+                  ],
                 ),
-                elevation: 3,
-                child: ListTile(
-                  leading: Icon(
-                    Icons.notifications,
-                    color: Theme.of(context).primaryColor,
+              ),
+            );
+          }
+
+          return FadeTransition(
+            opacity: _fadeAnimation,
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              itemCount: snapshot.data!.length,
+              itemBuilder: (context, index) {
+                final notification = snapshot.data![index];
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceLight,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primaryMain.withValues(alpha: 0.05),
+                        offset: const Offset(0, 4),
+                        blurRadius: 12,
+                      ),
+                    ],
                   ),
-                  title: Text(
-                    notification.title,
-                    style: TextStyle(fontWeight: FontWeight.w600),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(16),
+                      onTap: () {
+                        // Handle notification tap
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildNotificationIcon(),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          notification.title,
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.textMain,
+                                          ),
+                                        ),
+                                      ),
+                                      Text(
+                                        _formatTime(notification.createdAt),
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          color: AppColors.textLight,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    notification.body,
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      color: AppColors.textLight,
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
-                  subtitle: Text(
-                    notification.body,
-                    style: TextStyle(color: Colors.grey[700]),
-                  ),
-                  trailing: Text(
-                    "${notification.createdAt.hour}:${notification.createdAt.minute}",
-                    style: TextStyle(color: Colors.grey[500], fontSize: 12),
-                  ),
-                  onTap: () {
-                    // Navigate to notification details or perform an action
-                  },
-                ),
-              );
-            },
+                );
+              },
+            ),
           );
         },
       ),

@@ -14,7 +14,7 @@ class CustomTextField extends StatelessWidget {
   final String? suffixText;
 
   const CustomTextField({
-    Key? key,
+    super.key,
     required this.labelText,
     this.onSaved,
     this.validator,
@@ -26,7 +26,7 @@ class CustomTextField extends StatelessWidget {
     this.fillColor,
     this.onChanged,
     this.suffixText,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -15,6 +15,8 @@ import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:splitwise/utils/app_color.dart';
 
 class GroupListScreen extends StatefulWidget {
+  const GroupListScreen({super.key});
+
   @override
   _GroupListScreenState createState() => _GroupListScreenState();
 }
@@ -26,6 +28,7 @@ class _GroupListScreenState extends State<GroupListScreen>
   late UserService _userService;
   late AnimationController _animationController;
   late Animation<double> _animation;
+  bool _isScrolled = false;
 
   @override
   void initState() {
@@ -36,7 +39,7 @@ class _GroupListScreenState extends State<GroupListScreen>
     _userService = UserService();
     _animationController = AnimationController(
       vsync: this,
-      duration: Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 300),
     );
     _animation = CurvedAnimation(
       parent: _animationController,
@@ -51,78 +54,645 @@ class _GroupListScreenState extends State<GroupListScreen>
     super.dispose();
   }
 
+  Widget _buildModernAppBar(BuildContext context) {
+    return SliverAppBar(
+      expandedHeight: 120,
+      floating: false,
+      pinned: true,
+      elevation: 0,
+      backgroundColor: _isScrolled
+          ? AppColors.backgroundLight.withValues(alpha: 0.95)
+          : AppColors.backgroundLight,
+      leading: Builder(
+        builder: (context) => IconButton(
+          icon: const Icon(Icons.menu, color: AppColors.textMain),
+          onPressed: () => Scaffold.of(context).openDrawer(),
+        ),
+      ),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.notifications_none_rounded,
+              color: AppColors.textMain),
+          onPressed: () {
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const NotificationScreen()));
+          },
+        ),
+        const SizedBox(width: 8),
+      ],
+      flexibleSpace: const FlexibleSpaceBar(
+        title: Text(
+          'Split Expenses',
+          style: TextStyle(
+            color: AppColors.textMain,
+            fontSize: 24,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        titlePadding: EdgeInsets.only(left: 24, bottom: 16),
+        centerTitle: false,
+      ),
+    );
+  }
+
+  Widget _buildBalanceOverview(String userId) {
+    return FutureBuilder<Map<String, double>>(
+      future: _expenseService.calculateOverallBalance(userId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return _buildBalanceOverviewSkeleton();
+        }
+
+        final balance = snapshot.data ?? {'owed': 0, 'owing': 0};
+        final totalOwed = balance['owed'] ?? 0;
+        final totalOwing = balance['owing'] ?? 0;
+        final netBalance = totalOwed - totalOwing;
+
+        return Container(
+          decoration: BoxDecoration(
+            color: AppColors.surfaceLight,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primaryMain.withValues(alpha: 0.05),
+                offset: const Offset(0, 4),
+                blurRadius: 12,
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Total Balance',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: AppColors.textLight,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '\$${netBalance.abs().toStringAsFixed(2)}',
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color:
+                        netBalance >= 0 ? AppColors.success : AppColors.error,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildBalanceItem(
+                        'You are owed',
+                        totalOwed,
+                        Icons.arrow_upward_rounded,
+                        AppColors.success,
+                      ),
+                    ),
+                    const SizedBox(width: 24),
+                    Expanded(
+                      child: _buildBalanceItem(
+                        'You owe',
+                        totalOwing,
+                        Icons.arrow_downward_rounded,
+                        AppColors.error,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildBalanceItem(
+      String label, double amount, IconData icon, Color color) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, size: 16, color: color),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 14,
+                color: AppColors.textLight,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          '\$${amount.abs().toStringAsFixed(2)}',
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textMain,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCreateGroupButton(BuildContext context) {
+    return TextButton.icon(
+      onPressed: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const CreateGroupScreen()),
+      ).then((_) => setState(() {})),
+      icon:
+          const Icon(Icons.add_circle_outline, color: AppColors.secondaryMain),
+      label: const Text(
+        'New Group',
+        style: TextStyle(
+          color: AppColors.secondaryMain,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      style: TextButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModernGroupList(String userId, SettingsService settingsService) {
+    return StreamBuilder<List<Group>>(
+      stream: _groupService.getUserGroups(userId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return SliverToBoxAdapter(child: _buildGroupListSkeleton());
+        }
+
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return SliverToBoxAdapter(child: _buildEmptyState());
+        }
+
+        return SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (context, index) {
+              final group = snapshot.data![index];
+              return AnimationConfiguration.staggeredList(
+                position: index,
+                duration: const Duration(milliseconds: 375),
+                child: SlideAnimation(
+                  verticalOffset: 50.0,
+                  child: FadeInAnimation(
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child:
+                          _buildModernGroupCard(group, userId, settingsService),
+                    ),
+                  ),
+                ),
+              );
+            },
+            childCount: snapshot.data!.length,
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildModernGroupCard(
+      Group group, String userId, SettingsService settingsService) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceLight,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryMain.withValues(alpha: 0.05),
+            offset: const Offset(0, 4),
+            blurRadius: 12,
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(24),
+        child: InkWell(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => GroupDetailScreen(group: group)),
+          ),
+          borderRadius: BorderRadius.circular(24),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    _buildGroupAvatar(group),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            group.name,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textMain,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${group.members.length} members',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: AppColors.textLight,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      color: AppColors.textLight,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                FutureBuilder<double>(
+                  future:
+                      _expenseService.calculateGroupBalance(group.id, userId),
+                  builder: (context, balanceSnapshot) {
+                    if (balanceSnapshot.connectionState ==
+                        ConnectionState.waiting) {
+                      return _buildBalanceSkeletonIndicator();
+                    }
+
+                    final balance = balanceSnapshot.data ?? 0;
+                    final isPositive = balance >= 0;
+
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color:
+                            (isPositive ? AppColors.success : AppColors.error)
+                                .withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            isPositive
+                                ? Icons.arrow_upward_rounded
+                                : Icons.arrow_downward_rounded,
+                            size: 16,
+                            color: isPositive
+                                ? AppColors.success
+                                : AppColors.error,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            isPositive ? 'You are owed' : 'You owe',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: AppColors.textLight,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '\$${balance.abs().toStringAsFixed(2)}',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: isPositive
+                                  ? AppColors.success
+                                  : AppColors.error,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGroupAvatar(Group group) {
+    return Container(
+      width: 48,
+      height: 48,
+      decoration: BoxDecoration(
+        color: _getGroupColor(group.id).withValues(alpha: 0.15),
+        shape: BoxShape.circle,
+      ),
+      child: Center(
+        child: Text(
+          group.name.substring(0, 1).toUpperCase(),
+          style: TextStyle(
+            color: _getGroupColor(group.id),
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Color _getGroupColor(String groupId) {
+    final colors = [
+      AppColors.primaryMain,
+      AppColors.secondaryMain,
+      AppColors.accentMain,
+      AppColors.success,
+      AppColors.warning,
+    ];
+    final colorIndex = groupId.hashCode % colors.length;
+    return colors[colorIndex];
+  }
+
+  Widget _buildEmptyState() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 200,
+            height: 200,
+            decoration: BoxDecoration(
+              color: AppColors.secondaryMain.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.group_add_outlined,
+              size: 80,
+              color: AppColors.secondaryMain,
+            ),
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'No Groups Yet',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textMain,
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Create a group to start splitting expenses with your friends',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 16,
+              color: AppColors.textLight,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 32),
+          ElevatedButton(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CreateGroupScreen()),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.secondaryMain,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              elevation: 0,
+            ),
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              child: Text(
+                'Create Your First Group',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBalanceOverviewSkeleton() {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceLight,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryMain.withValues(alpha: 0.05),
+            offset: const Offset(0, 4),
+            blurRadius: 12,
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSkeletonLine(width: 100, height: 20),
+            const SizedBox(height: 12),
+            _buildSkeletonLine(width: 180, height: 40),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(child: _buildBalanceItemSkeleton()),
+                const SizedBox(width: 24),
+                Expanded(child: _buildBalanceItemSkeleton()),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBalanceItemSkeleton() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            _buildSkeletonBox(size: 32),
+            const SizedBox(width: 8),
+            _buildSkeletonLine(width: 80, height: 16),
+          ],
+        ),
+        const SizedBox(height: 12),
+        _buildSkeletonLine(width: 120, height: 24),
+      ],
+    );
+  }
+
+  Widget _buildGroupListSkeleton() {
+    return Column(
+      children: List.generate(
+        3,
+        (index) => Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.surfaceLight,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primaryMain.withValues(alpha: 0.05),
+                  offset: const Offset(0, 4),
+                  blurRadius: 12,
+                ),
+              ],
+            ),
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    _buildSkeletonBox(size: 48),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSkeletonLine(width: 150, height: 20),
+                          const SizedBox(height: 8),
+                          _buildSkeletonLine(width: 100, height: 16),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _buildSkeletonLine(width: 200, height: 40),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSkeletonLine({required double width, required double height}) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: AppColors.borderLight,
+        borderRadius: BorderRadius.circular(height / 2),
+      ),
+    );
+  }
+
+  Widget _buildSkeletonBox({required double size}) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: AppColors.borderLight,
+        borderRadius: BorderRadius.circular(size / 4),
+      ),
+    );
+  }
+
+  Widget _buildBalanceSkeletonIndicator() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.borderLight,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      width: 200,
+      height: 40,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
     final settingsService = Provider.of<SettingsService>(context);
 
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          _buildSliverAppBar(context),
-          SliverToBoxAdapter(
-            child: _buildFinancialOverview(authService.currentUser!.uid),
-          ),
-          SliverPadding(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            sliver:
-                _buildGroupList(authService.currentUser!.uid, settingsService),
-          ),
-        ],
-      ),
-      floatingActionButton: _buildFloatingActionButton(context),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      backgroundColor: AppColors.backgroundLight,
       drawer: _buildDrawer(context, authService),
-    );
-  }
-
-  Widget _buildSliverAppBar(BuildContext context) {
-    return SliverAppBar(
-      expandedHeight: 200,
-      floating: false,
-      pinned: true,
-      backgroundColor: AppColors.primaryMain,
-      flexibleSpace: FlexibleSpaceBar(
-        title: Text('My Groups',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        background: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [AppColors.primaryLight, AppColors.primaryMain],
+      body: NotificationListener<ScrollNotification>(
+        onNotification: (scrollNotification) {
+          if (scrollNotification is ScrollUpdateNotification) {
+            setState(() {
+              _isScrolled = scrollNotification.metrics.pixels > 0;
+            });
+          }
+          return true;
+        },
+        child: CustomScrollView(
+          slivers: [
+            _buildModernAppBar(context),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                child: _buildBalanceOverview(authService.currentUser!.uid),
+              ),
             ),
-          ),
-          child: Center(
-            child: Icon(Icons.group,
-                size: 80, color: Colors.white.withOpacity(0.3)),
-          ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Your Groups',
+                      style:
+                          Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                color: AppColors.textMain,
+                                fontWeight: FontWeight.w600,
+                              ),
+                    ),
+                    _buildCreateGroupButton(context),
+                  ],
+                ),
+              ),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              sliver: _buildModernGroupList(
+                authService.currentUser!.uid,
+                settingsService,
+              ),
+            ),
+            const SliverPadding(padding: EdgeInsets.only(bottom: 24)),
+          ],
         ),
-      ),
-      actions: [
-        IconButton(
-          icon: Icon(Icons.notifications, color: Colors.white),
-          onPressed: () {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => NotificationScreen()));
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildFloatingActionButton(BuildContext context) {
-    return ScaleTransition(
-      scale: _animation,
-      child: FloatingActionButton.extended(
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => CreateGroupScreen()),
-        ).then((_) => setState(() {})),
-        icon: Icon(Icons.add, color: Colors.white),
-        label: Text('Create Group', style: TextStyle(color: Colors.white)),
-        tooltip: 'Create new group',
-        backgroundColor: AppColors.accentMain,
       ),
     );
   }
@@ -130,17 +700,11 @@ class _GroupListScreenState extends State<GroupListScreen>
   Widget _buildDrawer(BuildContext context, AuthService authService) {
     return Drawer(
       child: Container(
-        color: Colors.white,
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: <Widget>[
+        color: AppColors.surfaceLight,
+        child: Column(
+          children: [
             _buildDrawerHeader(authService),
-            _buildDrawerItem(
-                Icons.person, 'Profile', () => _navigateToProfile(context)),
-            _buildDrawerItem(
-                Icons.settings, 'Settings', () => _navigateToSettings(context)),
-            _buildDrawerItem(Icons.exit_to_app, 'Sign Out',
-                () => _signOut(context, authService)),
+            _buildDrawerBody(context, authService),
           ],
         ),
       ),
@@ -151,227 +715,65 @@ class _GroupListScreenState extends State<GroupListScreen>
     return FutureBuilder<Map<String, dynamic>>(
       future: _userService.getUserData(authService.currentUser!.uid),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return _buildLoadingDrawerHeader();
-        }
-
         final userData = snapshot.data ?? {};
         final name = userData['name'] ?? 'User';
         final email = userData['email'] ?? '';
         final profileImageUrl = userData['profileImageUrl'];
 
-        return UserAccountsDrawerHeader(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [AppColors.primaryLight, AppColors.primaryMain],
-            ),
-          ),
-          accountName:
-              Text(name, style: TextStyle(fontWeight: FontWeight.bold)),
-          accountEmail: Text(email),
-          currentAccountPicture: GestureDetector(
-            onTap: () => _navigateToProfile(context),
-            child: CircleAvatar(
-              backgroundImage: profileImageUrl != null
-                  ? NetworkImage(profileImageUrl)
-                  : null,
-              backgroundColor: AppColors.secondaryLight,
-              child: profileImageUrl == null
-                  ? Icon(Icons.person, size: 40, color: Colors.white)
-                  : null,
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildLoadingDrawerHeader() {
-    return DrawerHeader(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.primaryLight, AppColors.primaryMain],
-        ),
-      ),
-      child: Center(child: CircularProgressIndicator(color: Colors.white)),
-    );
-  }
-
-  Widget _buildDrawerItem(IconData icon, String title, VoidCallback onTap) {
-    return ListTile(
-      leading: Icon(icon, color: AppColors.primaryMain),
-      title: Text(title, style: TextStyle(color: AppColors.textMain)),
-      onTap: onTap,
-    );
-  }
-
-  void _navigateToProfile(BuildContext context) {
-    Navigator.pop(context);
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => ProfileScreen()),
-    ).then((_) => setState(() {}));
-  }
-
-  void _navigateToSettings(BuildContext context) {
-    Navigator.pop(context);
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => SettingsScreen()),
-    );
-  }
-
-  Future<void> _signOut(BuildContext context, AuthService authService) async {
-    final confirmation = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Sign Out', style: TextStyle(color: AppColors.textMain)),
-        content: Text('Are you sure you want to sign out?',
-            style: TextStyle(color: AppColors.textLight)),
-        actions: <Widget>[
-          TextButton(
-            child: Text('Cancel', style: TextStyle(color: AppColors.textLight)),
-            onPressed: () => Navigator.pop(context, false),
-          ),
-          ElevatedButton(
-            child: Text('Sign Out'),
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              foregroundColor: Colors.white,
-              backgroundColor: Colors.red,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmation == true) {
-      await authService.signOut();
-      Navigator.pop(context);
-    }
-  }
-
-  Widget _buildFinancialOverview(String userId) {
-    return FutureBuilder<Map<String, double>>(
-      future: _expenseService.calculateOverallBalance(userId),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
-        }
-
-        if (snapshot.hasError) {
-          return Center(
-              child: Text('Error: ${snapshot.error}',
-                  style: TextStyle(color: AppColors.textMain)));
-        }
-
-        final balance = snapshot.data!;
-        final totalOwed = balance['owed'] ?? 0;
-        final totalOwing = balance['owing'] ?? 0;
-        final netBalance = totalOwed - totalOwing;
-
-        return Card(
-          margin: EdgeInsets.all(16),
-          elevation: 4,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          child: Padding(
-            padding: EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Financial Overview',
-                    style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textMain)),
-                SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildBalanceItem('You are owed', totalOwed, Colors.green),
-                    _buildBalanceItem('You owe', totalOwing, Colors.red),
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            return Container(
+              width: constraints.maxWidth,
+              padding: const EdgeInsets.fromLTRB(20, 48, 20, 20),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppColors.primaryMain,
+                    AppColors.primaryDark,
                   ],
                 ),
-                SizedBox(height: 16),
-                _buildBalanceItem('Net balance', netBalance,
-                    netBalance >= 0 ? Colors.green : Colors.red),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildBalanceItem(String label, double amount, Color color) {
-    final settingsService =
-        Provider.of<SettingsService>(context, listen: false);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: TextStyle(fontSize: 14, color: AppColors.textLight)),
-        SizedBox(height: 4),
-        Text(
-          '${settingsService.currency}${amount.abs().toStringAsFixed(2)}',
-          style: TextStyle(
-              fontSize: 18, fontWeight: FontWeight.bold, color: color),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildGroupList(String userId, SettingsService settingsService) {
-    return StreamBuilder<List<Group>>(
-      stream: _groupService.getUserGroups(userId),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return SliverFillRemaining(
-              child: Center(child: CircularProgressIndicator()));
-        }
-
-        if (snapshot.hasError) {
-          return SliverFillRemaining(
-              child: Center(
-                  child: Text('Error: ${snapshot.error}',
-                      style: TextStyle(color: AppColors.textMain))));
-        }
-
-        if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return SliverFillRemaining(
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.group_add, size: 64, color: AppColors.textLight),
-                  SizedBox(height: 16),
-                  Text('No groups found. Create one!',
-                      style:
-                          TextStyle(fontSize: 18, color: AppColors.textLight)),
-                ],
               ),
-            ),
-          );
-        }
-
-        return SliverAnimatedList(
-          initialItemCount: snapshot.data!.length,
-          itemBuilder: (context, index, animation) {
-            final group = snapshot.data![index];
-            return AnimationConfiguration.staggeredList(
-              position: index,
-              duration: const Duration(milliseconds: 375),
-              child: SlideAnimation(
-                verticalOffset: 50.0,
-                child: FadeInAnimation(
-                  child: _buildGroupCard(group, userId, settingsService),
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.surfaceLight,
+                      image: profileImageUrl != null
+                          ? DecorationImage(
+                              image: NetworkImage(profileImageUrl),
+                              fit: BoxFit.cover,
+                            )
+                          : null,
+                    ),
+                    child: profileImageUrl == null
+                        ? const Icon(Icons.person,
+                            size: 40, color: AppColors.primaryMain)
+                        : null,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    email,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white.withValues(alpha: 0.8),
+                    ),
+                  ),
+                ],
               ),
             );
           },
@@ -380,97 +782,129 @@ class _GroupListScreenState extends State<GroupListScreen>
     );
   }
 
-  Widget _buildGroupCard(
-      Group group, String userId, SettingsService settingsService) {
-    return Card(
-      margin: EdgeInsets.only(bottom: 16),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => GroupDetailScreen(group: group)),
-        ),
-        child: Padding(
-          padding: EdgeInsets.all(16),
+  Widget _buildDrawerBody(BuildContext context, AuthService authService) {
+    return Expanded(
+      child: Container(
+        color: AppColors.surfaceLight,
+        child: SingleChildScrollView(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      group.name,
-                      style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textMain),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  Icon(Icons.chevron_right, color: AppColors.textLight),
-                ],
+              _buildDrawerItem(
+                icon: Icons.person_outline,
+                title: 'Profile',
+                onTap: () => _navigateToScreen(context, const ProfileScreen()),
               ),
-              SizedBox(height: 8),
-              Text(
-                group.description,
-                style: TextStyle(fontSize: 14, color: AppColors.textLight),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+              _buildDrawerItem(
+                icon: Icons.settings_outlined,
+                title: 'Settings',
+                onTap: () => _navigateToScreen(context, const SettingsScreen()),
               ),
-              SizedBox(height: 16),
-              FutureBuilder<double>(
-                future: _expenseService.calculateGroupBalance(group.id, userId),
-                builder: (context, balanceSnapshot) {
-                  if (balanceSnapshot.connectionState ==
-                      ConnectionState.waiting) {
-                    return Text('Calculating balance...',
-                        style: TextStyle(
-                            fontSize: 14, color: AppColors.textLight));
-                  }
-
-                  final balance = balanceSnapshot.data ?? 0;
-                  final isPositive = balance >= 0;
-                  final balanceText =
-                      '${settingsService.currency}${balance.abs().toStringAsFixed(2)}';
-
-                  return Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        isPositive ? 'You are owed' : 'You owe',
-                        style:
-                            TextStyle(fontSize: 14, color: AppColors.textLight),
-                      ),
-                      Row(
-                        children: [
-                          Icon(
-                            isPositive
-                                ? Icons.arrow_upward
-                                : Icons.arrow_downward,
-                            color: isPositive ? Colors.green : Colors.red,
-                            size: 16,
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            balanceText,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: isPositive ? Colors.green : Colors.red,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  );
-                },
+              const Divider(color: AppColors.borderLight),
+              _buildDrawerItem(
+                icon: Icons.exit_to_app,
+                title: 'Sign Out',
+                onTap: () => _showSignOutDialog(context, authService),
+                textColor: AppColors.error,
+                iconColor: AppColors.error,
               ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Widget _buildDrawerItem({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+    Color? textColor,
+    Color? iconColor,
+  }) {
+    return ListTile(
+      leading: Icon(
+        icon,
+        color: iconColor ?? AppColors.textMain,
+        size: 24,
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+          color: textColor ?? AppColors.textMain,
+        ),
+      ),
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+    );
+  }
+
+  void _navigateToScreen(BuildContext context, Widget screen) {
+    Navigator.pop(context); // Close drawer
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => screen),
+    );
+  }
+
+  Future<void> _showSignOutDialog(
+      BuildContext context, AuthService authService) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+          'Sign Out',
+          style: TextStyle(
+            color: AppColors.textMain,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        content: const Text(
+          'Are you sure you want to sign out?',
+          style: TextStyle(
+            color: AppColors.textLight,
+            fontSize: 16,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(
+                color: AppColors.textLight,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text(
+              'Sign Out',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+        ),
+        backgroundColor: AppColors.surfaceLight,
+      ),
+    );
+
+    if (result == true) {
+      await authService.signOut();
+      Navigator.pop(context);
+    }
   }
 }

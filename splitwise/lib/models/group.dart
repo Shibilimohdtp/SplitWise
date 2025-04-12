@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
+
 class Group {
   final String id;
   final String name;
@@ -28,7 +30,9 @@ class Group {
 
   factory Group.fromFirestore(DocumentSnapshot doc) {
     Map data = doc.data() as Map<String, dynamic>;
-    print('Group data from Firestore: $data'); // Debug print
+    if (kDebugMode) {
+      print('Group data from Firestore: $data');
+    } // Debug print
     return Group(
       id: doc.id,
       name: data['name'] ?? '',

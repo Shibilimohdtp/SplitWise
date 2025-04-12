@@ -6,6 +6,8 @@ import 'package:splitwise/widgets/custom_text_field.dart';
 import 'package:splitwise/widgets/custom_button.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
+  const ForgotPasswordScreen({super.key});
+
   @override
   _ForgotPasswordScreenState createState() => _ForgotPasswordScreenState();
 }
@@ -23,14 +25,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         await Provider.of<AuthService>(context, listen: false)
             .sendPasswordResetEmail(_email);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
               content:
                   Text('Password reset email sent. Please check your inbox.')),
         );
         Navigator.pop(context);
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
               content: Text('Failed to send reset email. Please try again.')),
         );
       }
@@ -41,7 +43,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Forgot Password')),
+      appBar: AppBar(title: const Text('Forgot Password')),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -56,20 +58,20 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   style: Theme.of(context).textTheme.titleLarge,
                   textAlign: TextAlign.center,
                 ),
-                SizedBox(height: 24),
+                const SizedBox(height: 24),
                 CustomTextField(
                   labelText: 'Email',
                   onSaved: (value) => _email = value!,
                   validator: (value) =>
                       value!.isEmpty ? 'Please enter your email' : null,
                 ),
-                SizedBox(height: 24),
+                const SizedBox(height: 24),
                 CustomButton(
                   color: AppColors.accentMain,
                   onPressed: _isLoading ? null : _submit,
                   child: _isLoading
-                      ? CircularProgressIndicator(color: Colors.white)
-                      : Text('Send Reset Email'),
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text('Send Reset Email'),
                 ),
               ],
             ),

@@ -10,7 +10,7 @@ plugins {
 
 android {
     namespace = "com.shibilimohdtp.splitwise"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 34 // Manually set to avoid requiring AGP 8.1.0
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

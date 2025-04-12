@@ -9,6 +9,8 @@ import 'package:splitwise/widgets/custom_button.dart';
 import 'package:splitwise/models/user.dart';
 
 class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
@@ -35,7 +37,8 @@ class _LoginScreenState extends State<LoginScreen> {
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to sign in. Please try again.')),
+            const SnackBar(
+                content: Text('Failed to sign in. Please try again.')),
           );
         }
       }
@@ -62,14 +65,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: Theme.of(context).textTheme.headlineMedium,
                   textAlign: TextAlign.center,
                 ),
-                SizedBox(height: 48),
+                const SizedBox(height: 48),
                 CustomTextField(
                   labelText: 'Email',
                   onSaved: (value) => _email = value!,
                   validator: (value) =>
                       value!.isEmpty ? 'Please enter your email' : null,
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 CustomTextField(
                   labelText: 'Password',
                   obscureText: true,
@@ -77,21 +80,21 @@ class _LoginScreenState extends State<LoginScreen> {
                   validator: (value) =>
                       value!.isEmpty ? 'Please enter your password' : null,
                 ),
-                SizedBox(height: 24),
+                const SizedBox(height: 24),
                 CustomButton(
                   onPressed: _isLoading ? null : _submit,
                   color: AppColors.accentMain,
                   child: _isLoading
-                      ? CircularProgressIndicator(color: Colors.white)
-                      : Text('Log In'),
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text('Log In'),
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 TextButton(
                   onPressed: () => Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => SignUpScreen()),
+                    MaterialPageRoute(builder: (_) => const SignUpScreen()),
                   ),
-                  child: Text(
+                  child: const Text(
                     'Don\'t have an account? Sign Up',
                     style: TextStyle(color: AppColors.textMain),
                   ),
@@ -99,9 +102,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 TextButton(
                   onPressed: () => Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => ForgotPasswordScreen()),
+                    MaterialPageRoute(
+                        builder: (_) => const ForgotPasswordScreen()),
                   ),
-                  child: Text(
+                  child: const Text(
                     'Forgot Password?',
                     style: TextStyle(color: AppColors.textMain),
                   ),

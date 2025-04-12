@@ -6,6 +6,8 @@ import 'package:splitwise/widgets/custom_text_field.dart';
 import 'package:splitwise/widgets/custom_button.dart';
 
 class SignUpScreen extends StatefulWidget {
+  const SignUpScreen({super.key});
+
   @override
   _SignUpScreenState createState() => _SignUpScreenState();
 }
@@ -24,7 +26,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       _formKey.currentState!.save();
       if (_password != _confirmPassword) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Passwords do not match')),
+          const SnackBar(content: Text('Passwords do not match')),
         );
         return;
       }
@@ -40,7 +42,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         }
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to sign up. Please try again.')),
+          const SnackBar(content: Text('Failed to sign up. Please try again.')),
         );
       }
       setState(() => _isLoading = false);
@@ -58,8 +60,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                SizedBox(height: 48),
-                Text(
+                const SizedBox(height: 48),
+                const Text(
                   'Create Account',
                   style: TextStyle(
                     fontSize: 24,
@@ -67,28 +69,28 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                   textAlign: TextAlign.center,
                 ),
-                SizedBox(height: 32),
+                const SizedBox(height: 32),
                 CustomTextField(
                   labelText: 'Name',
                   onSaved: (value) => _name = value!,
                   validator: (value) =>
                       value!.isEmpty ? 'Please enter your name' : null,
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 CustomTextField(
                   labelText: 'Username',
                   onSaved: (value) => _username = value!,
                   validator: (value) =>
                       value!.isEmpty ? 'Please enter a username' : null,
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 CustomTextField(
                   labelText: 'Email',
                   onSaved: (value) => _email = value!,
                   validator: (value) =>
                       value!.isEmpty ? 'Please enter your email' : null,
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 CustomTextField(
                   labelText: 'Password',
                   obscureText: true,
@@ -97,7 +99,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ? 'Password must be at least 6 characters'
                       : null,
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 CustomTextField(
                   labelText: 'Confirm Password',
                   obscureText: true,
@@ -105,18 +107,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   validator: (value) =>
                       value!.isEmpty ? 'Please confirm your password' : null,
                 ),
-                SizedBox(height: 24),
+                const SizedBox(height: 24),
                 CustomButton(
                   color: AppColors.accentMain,
                   onPressed: _isLoading ? null : _submit,
                   child: _isLoading
-                      ? CircularProgressIndicator(color: Colors.white)
-                      : Text('Sign Up'),
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text('Sign Up'),
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: Text('Already have an account? Log in'),
+                  child: const Text('Already have an account? Log in'),
                 ),
               ],
             ),

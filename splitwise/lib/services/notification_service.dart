@@ -1,4 +1,5 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:splitwise/models/notification.dart' as model;
@@ -92,7 +93,9 @@ class NotificationService {
   Future<void> sendNotification(String userId, String title, String body,
       {String? groupId}) async {
     // In a real app, you'd send this to your server to handle FCM sending
-    print('Sending notification to user $userId: $title - $body');
+    if (kDebugMode) {
+      print('Sending notification to user $userId: $title - $body');
+    }
     // For now, we'll just save it to Firestore
     final notification = model.Notification(
       id: '',

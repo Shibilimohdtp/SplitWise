@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:splitwise/models/group.dart';
 import 'package:splitwise/services/database_helper.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
@@ -34,7 +35,9 @@ class GroupService {
         return newGroup;
       }
     } catch (e) {
-      print('Error in createGroup: $e');
+      if (kDebugMode) {
+        print('Error in createGroup: $e');
+      }
       return null;
     }
   }
