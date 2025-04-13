@@ -32,6 +32,23 @@ class UserService {
     return 'Unknown User';
   }
 
+  /// Fetches both user name and profile image URL in a single Firestore call
+  Future<Map<String, dynamic>> getUserNameAndImage(String userId) async {
+    DocumentSnapshot userDoc =
+        await _firestore.collection('users').doc(userId).get();
+    if (userDoc.exists) {
+      Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+      return {
+        'name': userData['name'] ?? 'Unknown User',
+        'profileImageUrl': userData['profileImageUrl'],
+      };
+    }
+    return {
+      'name': 'Unknown User',
+      'profileImageUrl': null,
+    };
+  }
+
   Future<List<String>> getUserNamesList(List<String> userIds) async {
     List<String> names = [];
     for (String userId in userIds) {

@@ -3,29 +3,49 @@ import 'package:intl/intl.dart';
 import 'package:splitwise/utils/app_color.dart';
 
 class ExpenseFilterDialogs {
-  static Future<DateTimeRange?> showDateRangeFilterDialog(BuildContext context, DateTimeRange? currentRange) {
+  static Future<DateTimeRange?> showDateRangeFilterDialog(
+      BuildContext context, DateTimeRange? currentRange) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return showDialog<DateTimeRange?>(
       context: context,
       builder: (context) => Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Container(
-          padding: const EdgeInsets.all(24),
+        backgroundColor: colorScheme.surface,
+        child: Padding(
+          padding: const EdgeInsets.all(20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Select Time Period',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textMain,
-                ),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      Icons.date_range_rounded,
+                      size: 16,
+                      color: colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Select Time Period',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.1,
+                        ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               Wrap(
-                spacing: 12,
-                runSpacing: 12,
+                spacing: 8,
+                runSpacing: 8,
                 children: [
                   _buildQuickSelectChip(
                     context: context,
@@ -53,7 +73,8 @@ class ExpenseFilterDialogs {
                     onTap: () {
                       final now = DateTime.now();
                       final startOfYear = DateTime(now.year, 1, 1);
-                      Navigator.pop(context, DateTimeRange(start: startOfYear, end: now));
+                      Navigator.pop(
+                          context, DateTimeRange(start: startOfYear, end: now));
                     },
                   ),
                   _buildQuickSelectChip(
@@ -65,11 +86,10 @@ class ExpenseFilterDialogs {
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
               InkWell(
                 onTap: () async {
                   Navigator.pop(context);
-                  final ThemeData theme = Theme.of(context);
                   final DateTimeRange? picked = await showDateRangePicker(
                     context: context,
                     firstDate: DateTime(2000),
@@ -80,45 +100,44 @@ class ExpenseFilterDialogs {
                               DateTime.now().subtract(const Duration(days: 30)),
                           end: DateTime.now(),
                         ),
-                    builder: (BuildContext context, Widget? child) {
-                      return Theme(
-                        data: theme.copyWith(
-                          colorScheme: theme.colorScheme.copyWith(
-                            primary: AppColors.primaryMain,
-                            onPrimary: Colors.white,
-                            surface: AppColors.surfaceLight,
-                            onSurface: AppColors.textMain,
-                          ),
-                        ),
-                        child: child!,
-                      );
-                    },
                   );
                   if (picked != null && context.mounted) {
                     Navigator.pop(context, picked);
                   }
                 },
+                borderRadius: BorderRadius.circular(12),
                 child: Container(
-                  padding: const EdgeInsets.all(16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
-                    border: Border.all(color: AppColors.borderLight),
+                    color: colorScheme.surfaceContainerLowest,
                     borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: colorScheme.outline.withValues(alpha: 0.1),
+                    ),
                   ),
-                  child: const Row(
+                  child: Row(
                     children: [
-                      Icon(Icons.calendar_today_outlined,
-                          color: AppColors.primaryMain),
-                      SizedBox(width: 12),
+                      Icon(
+                        Icons.calendar_today_outlined,
+                        size: 16,
+                        color: colorScheme.primary,
+                      ),
+                      const SizedBox(width: 12),
                       Text(
                         'Custom Range',
                         style: TextStyle(
-                          color: AppColors.primaryMain,
+                          color: colorScheme.primary,
                           fontWeight: FontWeight.w500,
+                          fontSize: 14,
                         ),
                       ),
-                      Spacer(),
-                      Icon(Icons.arrow_forward_ios,
-                          size: 16, color: AppColors.textLight),
+                      const Spacer(),
+                      Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 14,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
                     ],
                   ),
                 ),
@@ -213,27 +232,103 @@ class ExpenseFilterDialogs {
                 Navigator.pop(context, null);
               },
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-              child: Text(
-                'All Members',
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            ...members.map((member) => SimpleDialogOption(
-                  onPressed: () {
-                    Navigator.pop(context, member['uid']);
-                  },
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                  child: Text(
-                    member['name'] ?? 'Unknown',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface,
+              child: Row(
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    alignment: Alignment.center,
+                    child: Icon(
+                      Icons.people_rounded,
+                      size: 16,
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                   ),
-                )),
+                  const SizedBox(width: 12),
+                  Text(
+                    'All Members',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            ...members.map((member) {
+              // Handle both User objects and map-like structures
+              String memberId = '';
+              String memberName = 'Unknown';
+
+              if (member is Map) {
+                memberId = member['uid'] ?? '';
+                memberName = member['name'] ?? 'Unknown';
+              } else {
+                // Assuming it's a User object with uid and name properties
+                try {
+                  memberId = member.uid;
+                  memberName = member.name;
+                } catch (e) {
+                  // Silent error - fallback to default values
+                  // In a production app, use a proper logging framework
+                }
+              }
+
+              return SimpleDialogOption(
+                onPressed: () {
+                  Navigator.pop(context, memberId);
+                },
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                child: Row(
+                  children: [
+                    // Avatar circle with first letter of name
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        memberName.isNotEmpty
+                            ? memberName[0].toUpperCase()
+                            : '?',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    // Member name
+                    Expanded(
+                      child: Text(
+                        memberName,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontSize: 14,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
           ],
         );
       },

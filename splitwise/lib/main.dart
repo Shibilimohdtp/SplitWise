@@ -7,7 +7,7 @@ import 'package:splitwise/services/settings_service.dart';
 import 'package:splitwise/services/expense_service.dart';
 import 'package:splitwise/services/user_service.dart';
 import 'package:splitwise/features/authentication/login_screen.dart';
-import 'package:splitwise/features/group_management/group_list_screen.dart';
+import 'package:splitwise/features/group_management/home_screen.dart';
 import 'package:splitwise/utils/app_theme.dart';
 
 void main() async {
@@ -66,7 +66,7 @@ class AuthWrapper extends StatelessWidget {
       builder: (_, AsyncSnapshot<User?> snapshot) {
         if (snapshot.connectionState == ConnectionState.active) {
           final User? user = snapshot.data;
-          return user == null ? const LoginScreen() : const GroupListScreen();
+          return user == null ? const LoginScreen() : const HomeScreen();
         }
         return const Scaffold(body: Center(child: CircularProgressIndicator()));
       },

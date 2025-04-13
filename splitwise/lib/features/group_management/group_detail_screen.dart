@@ -9,13 +9,13 @@ import 'package:splitwise/services/user_service.dart';
 import 'package:splitwise/features/expense_tracking/add_expense_screen.dart';
 
 // Import components
-import 'package:splitwise/features/group_management/components/group_header.dart';
-import 'package:splitwise/features/group_management/components/group_balance_card.dart';
-import 'package:splitwise/features/group_management/components/group_tab_bar.dart';
-import 'package:splitwise/features/group_management/components/group_members_tab.dart';
-import 'package:splitwise/features/group_management/components/group_options_bottom_sheet.dart';
-import 'package:splitwise/features/group_management/components/member_management_dialogs.dart';
-import 'package:splitwise/features/group_management/expense_components/expense_list.dart';
+import 'package:splitwise/widgets/group_details_component/group_header.dart';
+import 'package:splitwise/widgets/group_details_component/group_balance_card.dart';
+import 'package:splitwise/widgets/group_details_component/group_tab_bar.dart';
+import 'package:splitwise/widgets/group_details_component/group_members_tab.dart';
+import 'package:splitwise/widgets/group_details_component/group_options_bottom_sheet.dart';
+import 'package:splitwise/widgets/group_details_component/member_management_dialogs.dart';
+import 'package:splitwise/widgets/expense_list_components/expense_list.dart';
 
 class GroupDetailScreen extends StatefulWidget {
   final Group group;

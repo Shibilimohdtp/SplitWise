@@ -16,15 +16,17 @@ class GroupOptionsBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        color: colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
+            color: colorScheme.shadow.withValues(alpha: 0.08),
+            blurRadius: 8,
+            offset: const Offset(0, -1),
           ),
         ],
       ),
@@ -32,41 +34,38 @@ class GroupOptionsBottomSheet extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Handle
             Container(
-              margin: const EdgeInsets.symmetric(vertical: 8),
-              width: 40,
+              margin: const EdgeInsets.symmetric(vertical: 6),
+              width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: Theme.of(context)
-                    .colorScheme
-                    .outline
-                    .withValues(alpha: 0.3),
+                color: colorScheme.outline.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
+
+            // Title
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .primary
-                          .withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
+                      color: colorScheme.primary.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
                       Icons.settings_rounded,
-                      size: 18,
-                      color: Theme.of(context).colorScheme.primary,
+                      size: 16,
+                      color: colorScheme.primary,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 8),
                   Text(
                     'Group Options',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w600,
                           letterSpacing: 0.1,
                         ),
@@ -74,6 +73,10 @@ class GroupOptionsBottomSheet extends StatelessWidget {
                 ],
               ),
             ),
+
+            const Divider(height: 1),
+
+            // Options
             _buildOptionTile(
               context: context,
               icon: Icons.analytics_rounded,
@@ -107,7 +110,7 @@ class GroupOptionsBottomSheet extends StatelessWidget {
                   showDeleteGroupDialog();
                 },
               ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
           ],
         ),
       ),
@@ -121,33 +124,37 @@ class GroupOptionsBottomSheet extends StatelessWidget {
     required VoidCallback onTap,
     bool isDestructive = false,
   }) {
-    final color = isDestructive
-        ? Theme.of(context).colorScheme.error
-        : Theme.of(context).colorScheme.primary;
+    final colorScheme = Theme.of(context).colorScheme;
+    final color = isDestructive ? colorScheme.error : colorScheme.primary;
+    final textColor = isDestructive ? colorScheme.error : colorScheme.onSurface;
 
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
+                color: color.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(icon, size: 20, color: color),
+              child: Icon(icon, size: 16, color: color),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
             Text(
               title,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w500,
-                    color: isDestructive
-                        ? Theme.of(context).colorScheme.error
-                        : Theme.of(context).colorScheme.onSurface,
+                    color: textColor,
                   ),
+            ),
+            const Spacer(),
+            Icon(
+              Icons.chevron_right_rounded,
+              size: 16,
+              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
             ),
           ],
         ),

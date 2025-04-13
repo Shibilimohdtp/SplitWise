@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:splitwise/models/expense.dart';
 import 'package:splitwise/services/expense_service.dart';
 import 'package:splitwise/services/user_service.dart';
 import 'package:splitwise/services/settings_service.dart';
-import 'package:splitwise/features/group_management/expense_components/expense_card.dart';
-import 'package:splitwise/features/group_management/expense_components/expense_filter_section.dart';
-import 'package:splitwise/features/group_management/expense_components/expense_details_bottom_sheet.dart';
-import 'package:splitwise/features/group_management/expense_components/expense_filter_dialogs.dart';
+import 'package:splitwise/widgets/expense_list_components/expense_card.dart';
+import 'package:splitwise/widgets/expense_list_components/expense_filter_section.dart';
+import 'package:splitwise/widgets/expense_list_components/expense_details_bottom_sheet.dart';
+import 'package:splitwise/widgets/expense_list_components/expense_filter_dialogs.dart';
 
 class ExpenseList extends StatefulWidget {
   final String groupId;
@@ -112,13 +113,32 @@ class ExpenseListState extends State<ExpenseList> {
     final userService = Provider.of<UserService>(context, listen: false);
 
     try {
-      final members = await userService.getGroupMembers([widget.groupId]);
+      // First, get the group to access its members list
+      final groupSnapshot = await FirebaseFirestore.instance
+          .collection('groups')
+          .doc(widget.groupId)
+          .get();
+
+      if (!groupSnapshot.exists) {
+        if (!mounted) return;
+        _showErrorSnackBar('Group not found');
+        return;
+      }
+
+      final groupData = groupSnapshot.data()!;
+      final List<String> memberIds =
+          List<String>.from(groupData['members'] ?? []);
+
+      // Now get the actual user objects for these member IDs
+      final members = await userService.getGroupMembers(memberIds);
 
       if (!mounted) return;
 
       final selectedMember =
           await ExpenseFilterDialogs.showMemberSelectionDialog(
-              context, members);
+              // ignore: use_build_context_synchronously
+              context,
+              members);
 
       if (!mounted) return;
 
@@ -138,7 +158,7 @@ class ExpenseListState extends State<ExpenseList> {
     } catch (e) {
       if (!mounted) return;
 
-      _showErrorSnackBar('Failed to load members');
+      _showErrorSnackBar('Failed to load members: ${e.toString()}');
     }
   }
 
@@ -371,23 +391,6 @@ class ExpenseListState extends State<ExpenseList> {
             ),
           ),
           const SizedBox(height: 24),
-          FilledButton.icon(
-            onPressed: () {
-              // Navigate to add expense screen
-              Navigator.of(context).pop(); // Close the current screen
-              // The parent screen will handle navigation to add expense
-            },
-            icon: const Icon(Icons.add_rounded),
-            label: const Text('Add Expense'),
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              foregroundColor: Theme.of(context).colorScheme.onPrimary,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
         ],
       ),
     );

@@ -4,7 +4,7 @@ import 'package:splitwise/services/auth_service.dart';
 import 'package:splitwise/features/authentication/signup_screen.dart';
 import 'package:splitwise/features/authentication/forgot_password_screen.dart';
 import 'package:splitwise/widgets/common/custom_text_field.dart';
-import 'package:splitwise/widgets/common/custom_button.dart';
+import 'package:splitwise/widgets/common/enhanced_button.dart';
 import 'package:splitwise/models/user.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -170,25 +170,14 @@ class LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  CustomButton(
-                    onPressed: _isLoading ? null : _submit,
-                    child: _isLoading
-                        ? SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                  Theme.of(context).colorScheme.onPrimary),
-                            ),
-                          )
-                        : const Text(
-                            'Log In',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                  EnhancedButton(
+                    content: 'Log In',
+                    onPressed: _submit,
+                    isLoading: _isLoading,
+                    textStyle: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   Row(
@@ -220,48 +209,31 @@ class LoginScreenState extends State<LoginScreen> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  OutlinedButton(
-                    onPressed: _isGoogleLoading ? null : _signInWithGoogle,
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      side: BorderSide(
-                        color: Theme.of(context).colorScheme.outline,
-                        width: 1,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: _isGoogleLoading
-                        ? SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                  Theme.of(context).colorScheme.primary),
-                            ),
-                          )
-                        : Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Image.asset(
-                                'assets/images/google_logo.png',
-                                height: 18,
-                                width: 18,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Continue with Google',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                  color:
-                                      Theme.of(context).colorScheme.onSurface,
-                                ),
-                              ),
-                            ],
+                  EnhancedButton.outlined(
+                    onPressed: _signInWithGoogle,
+                    isLoading: _isGoogleLoading,
+                    content: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Image.asset(
+                          'assets/images/google_logo.png',
+                          height: 18,
+                          width: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Continue with Google',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
+                        ),
+                      ],
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    loadingIndicatorColor:
+                        Theme.of(context).colorScheme.primary,
                   ),
                   const SizedBox(height: 24),
                   Row(

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:splitwise/services/auth_service.dart';
 import 'package:splitwise/widgets/common/custom_text_field.dart';
-import 'package:splitwise/widgets/common/custom_button.dart';
+import 'package:splitwise/widgets/common/enhanced_button.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -186,25 +186,14 @@ class SignUpScreenState extends State<SignUpScreen> {
                       value!.isEmpty ? 'Please confirm your password' : null,
                 ),
                 const SizedBox(height: 24),
-                CustomButton(
-                  onPressed: _isLoading ? null : _submit,
-                  child: _isLoading
-                      ? SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                                Theme.of(context).colorScheme.onPrimary),
-                          ),
-                        )
-                      : const Text(
-                          'Sign Up',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                EnhancedButton(
+                  content: 'Sign Up',
+                  onPressed: _submit,
+                  isLoading: _isLoading,
+                  textStyle: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 const SizedBox(height: 24),
                 Row(

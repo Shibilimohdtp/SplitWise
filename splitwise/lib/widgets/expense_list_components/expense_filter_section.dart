@@ -22,60 +22,56 @@ class ExpenseFilterSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool hasFilters = selectedCategory != null ||
+        selectedDateRange != null ||
+        selectedMemberId != null;
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
+        color: Theme.of(context).colorScheme.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
         ),
       ),
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      child: Row(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              if (selectedCategory != null ||
-                  selectedDateRange != null ||
-                  selectedMemberId != null)
-                TextButton(
-                  onPressed: onClearFilters,
-                  style: TextButton.styleFrom(
-                    foregroundColor: Theme.of(context).colorScheme.primary,
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    textStyle: const TextStyle(
-                        fontSize: 12, fontWeight: FontWeight.w500),
-                  ),
-                  child: const Text('Clear All'),
-                ),
-            ],
+          Expanded(
+            child: _buildCategoryDropdown(context),
           ),
-          Row(
-            children: [
-              Expanded(
-                child: _buildCategoryDropdown(context),
-              ),
-              const SizedBox(width: 8),
-              _buildFilterButton(
-                context: context,
-                icon: Icons.date_range_rounded,
-                label: selectedDateRange != null ? 'Date ✓' : 'Date',
-                onTap: onSelectDateRange,
-              ),
-              const SizedBox(width: 8),
-              _buildFilterButton(
-                context: context,
-                icon: Icons.person_rounded,
-                label: selectedMemberId != null ? 'Member ✓' : 'Member',
-                onTap: onSelectMember,
-              ),
-            ],
+          const SizedBox(width: 6),
+          _buildFilterButton(
+            context: context,
+            icon: Icons.date_range_rounded,
+            label: selectedDateRange != null ? 'Date ✓' : 'Date',
+            onTap: onSelectDateRange,
           ),
+          const SizedBox(width: 6),
+          _buildFilterButton(
+            context: context,
+            icon: Icons.person_rounded,
+            label: selectedMemberId != null ? 'Member ✓' : 'Member',
+            onTap: onSelectMember,
+          ),
+          if (hasFilters) ...[
+            const SizedBox(width: 4),
+            IconButton(
+              onPressed: onClearFilters,
+              icon: Icon(
+                Icons.clear_all_rounded,
+                size: 18,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              tooltip: 'Clear all filters',
+              style: IconButton.styleFrom(
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                minimumSize: const Size(32, 32),
+                padding: EdgeInsets.zero,
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -83,50 +79,54 @@ class ExpenseFilterSection extends StatelessWidget {
 
   Widget _buildCategoryDropdown(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      height: 36,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
         color: selectedCategory != null
             ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.05)
-            : Theme.of(context).colorScheme.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(12),
+            : Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: selectedCategory != null
               ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)
-              : Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+              : Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
+          width: 1,
         ),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: selectedCategory,
           hint: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
                 Icons.category_rounded,
-                size: 16,
+                size: 14,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 4),
               Text(
                 'Category',
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontSize: 13,
+                  fontSize: 12,
                   fontWeight: FontWeight.w500,
                 ),
               ),
             ],
           ),
+          isDense: true,
           isExpanded: true,
           icon: Icon(
             Icons.keyboard_arrow_down_rounded,
             color: selectedCategory != null
                 ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.onSurface,
-            size: 18,
+                : Theme.of(context).colorScheme.onSurfaceVariant,
+            size: 16,
           ),
           style: TextStyle(
             color: Theme.of(context).colorScheme.onSurface,
-            fontSize: 13,
+            fontSize: 12,
             fontWeight: FontWeight.w500,
           ),
           onChanged: onCategoryChanged,
@@ -134,17 +134,18 @@ class ExpenseFilterSection extends StatelessWidget {
             DropdownMenuItem<String>(
               value: null,
               child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
                     Icons.clear_rounded,
-                    size: 16,
+                    size: 14,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 4),
                   Text(
                     'All Categories',
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: 12,
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
@@ -154,8 +155,9 @@ class ExpenseFilterSection extends StatelessWidget {
             ..._buildCategoryItems(context),
           ],
           dropdownColor: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(8),
           menuMaxHeight: 300,
+          padding: EdgeInsets.zero,
         ),
       ),
     );
@@ -175,17 +177,18 @@ class ExpenseFilterSection extends StatelessWidget {
       return DropdownMenuItem<String>(
         value: value,
         child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               _getCategoryIcon(value),
               size: 14,
               color: _getCategoryColor(value),
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 4),
             Text(
               value,
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 12,
                 color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
@@ -206,40 +209,43 @@ class ExpenseFilterSection extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          height: 36,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
           decoration: BoxDecoration(
             color: isActive
-                ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
-                : Theme.of(context).colorScheme.surfaceContainerLowest,
-            borderRadius: BorderRadius.circular(12),
+                ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.05)
+                : Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: isActive
-                  ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)
+                  ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)
                   : Theme.of(context)
                       .colorScheme
                       .outline
-                      .withValues(alpha: 0.2),
+                      .withValues(alpha: 0.1),
+              width: 1,
             ),
           ),
           child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
                 icon,
-                size: 16,
+                size: 14,
                 color: isActive
                     ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.onSurface,
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 4),
               Text(
                 label,
                 style: TextStyle(
                   color: isActive
                       ? Theme.of(context).colorScheme.primary
-                      : Theme.of(context).colorScheme.onSurface,
-                  fontSize: 13,
+                      : Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontSize: 12,
                   fontWeight: FontWeight.w500,
                 ),
               ),

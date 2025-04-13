@@ -103,6 +103,7 @@ class ProfileScreenState extends State<ProfileScreen>
 
       if (image != null) {
         // Get auth service before async gap
+        // ignore: use_build_context_synchronously
         final authService = Provider.of<AuthService>(context, listen: false);
         final userId = authService.currentUser!.uid;
 

@@ -337,18 +337,6 @@ class ExpenseCard extends StatelessWidget {
                       child: FilledButton(
                         onPressed: () {
                           Navigator.of(context).pop(true);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text('Expense deleted'),
-                              backgroundColor:
-                                  Theme.of(context).colorScheme.error,
-                              behavior: SnackBarBehavior.floating,
-                              margin: const EdgeInsets.all(12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                          );
                         },
                         style: FilledButton.styleFrom(
                           backgroundColor: Theme.of(context).colorScheme.error,

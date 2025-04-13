@@ -98,11 +98,16 @@ class AuthService with ChangeNotifier {
 
   Future<void> signOut() async {
     try {
+      // Sign out from Firebase
       await _auth.signOut();
+
+      // Sign out from Google
+      await _googleSignIn.signOut();
+
       notifyListeners();
     } catch (e) {
       if (kDebugMode) {
-        print(e.toString());
+        print('Sign out error: ${e.toString()}');
       }
     }
   }
@@ -120,7 +125,12 @@ class AuthService with ChangeNotifier {
 
   Future<User?> signInWithGoogle() async {
     try {
-      // Trigger the authentication flow
+      // Always sign out from Google first to force the account selection dialog
+      if (_googleSignIn.currentUser != null) {
+        await _googleSignIn.signOut();
+      }
+
+      // Trigger the authentication flow with account selection prompt
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
 
       if (googleUser == null) {

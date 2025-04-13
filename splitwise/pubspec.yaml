@@ -53,6 +53,7 @@ dependencies:
   firebase_core: ^3.13.0
   path: ^1.9.1
   google_sign_in: ^6.3.0
+  cached_network_image: ^3.4.1
 
 flutter_native_splash:
   color: "#FFF5E6"

@@ -313,20 +313,25 @@ class ExpenseDetailsBottomSheet extends StatelessWidget {
     final primaryColor = Theme.of(context).colorScheme.primary;
 
     List<Widget> widgets = [];
+    final entries = expense.splitDetails.entries.toList();
 
-    for (var entry in expense.splitDetails.entries) {
+    for (int i = 0; i < entries.length; i++) {
+      final entry = entries[i];
+      final isLastItem = i == entries.length - 1;
       final userName = await userService.getUserName(entry.key);
 
       widgets.add(
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(
-                color: outlineColor,
-                width: 1,
-              ),
-            ),
+            border: isLastItem
+                ? null
+                : Border(
+                    bottom: BorderSide(
+                      color: outlineColor,
+                      width: 1,
+                    ),
+                  ),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
