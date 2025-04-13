@@ -1,20 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:splitwise/features/settings/settings_screen.dart';
+import 'package:splitwise/models/notification.dart' as model;
 import 'package:splitwise/services/auth_service.dart';
 import 'package:splitwise/services/notification_service.dart';
-import 'package:splitwise/models/notification.dart' as model;
-import 'package:splitwise/utils/app_color.dart';
-import 'package:intl/intl.dart';
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
 
   @override
-  _NotificationScreenState createState() => _NotificationScreenState();
+  NotificationScreenState createState() => NotificationScreenState();
 }
 
-class _NotificationScreenState extends State<NotificationScreen>
+class NotificationScreenState extends State<NotificationScreen>
     with SingleTickerProviderStateMixin {
   final NotificationService _notificationService = NotificationService();
   late AnimationController _animationController;
@@ -57,15 +56,15 @@ class _NotificationScreenState extends State<NotificationScreen>
 
   Widget _buildNotificationIcon() {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: AppColors.primaryMain.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
+        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
       ),
-      child: const Icon(
+      child: Icon(
         Icons.notifications_outlined,
-        color: AppColors.primaryMain,
-        size: 24,
+        color: Theme.of(context).colorScheme.primary,
+        size: 16,
       ),
     );
   }
@@ -76,27 +75,40 @@ class _NotificationScreenState extends State<NotificationScreen>
     final userId = authService.currentUser!.uid;
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text(
+        title: Text(
           'Notifications',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 24,
-            color: AppColors.textMain,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, size: 20),
+          onPressed: () => Navigator.pop(context),
+          iconSize: 20,
+          style: IconButton.styleFrom(
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings_outlined, color: Colors.white),
+            icon: Icon(
+              Icons.settings_outlined,
+              color: Theme.of(context).colorScheme.onSurface,
+              size: 20,
+            ),
             onPressed: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const SettingsScreen()),
               );
             },
+            style: IconButton.styleFrom(
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
           ),
           const SizedBox(width: 8),
         ],
@@ -105,10 +117,11 @@ class _NotificationScreenState extends State<NotificationScreen>
         stream: _notificationService.getUserNotifications(userId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
+            return Center(
               child: CircularProgressIndicator(
-                valueColor:
-                    AlwaysStoppedAnimation<Color>(AppColors.primaryMain),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                    Theme.of(context).colorScheme.primary),
+                strokeWidth: 2.5,
               ),
             );
           }
@@ -121,34 +134,35 @@ class _NotificationScreenState extends State<NotificationScreen>
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
-                      width: 120,
-                      height: 120,
+                      width: 80,
+                      height: 80,
                       decoration: BoxDecoration(
-                        color: AppColors.primaryMain.withValues(alpha: 0.1),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.notifications_off_outlined,
-                        size: 48,
-                        color: AppColors.primaryMain,
+                        size: 32,
+                        color: Theme.of(context).colorScheme.primary,
                       ),
                     ),
-                    const SizedBox(height: 24),
-                    const Text(
+                    const SizedBox(height: 16),
+                    Text(
                       "You're all caught up!",
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textMain,
-                      ),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
+                    Text(
                       "No new notifications at the moment",
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: AppColors.textLight,
-                      ),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
                     ),
                   ],
                 ),
@@ -159,37 +173,36 @@ class _NotificationScreenState extends State<NotificationScreen>
           return FadeTransition(
             opacity: _fadeAnimation,
             child: ListView.builder(
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
               itemCount: snapshot.data!.length,
               itemBuilder: (context, index) {
                 final notification = snapshot.data![index];
                 return Container(
-                  margin: const EdgeInsets.only(bottom: 12),
+                  margin: const EdgeInsets.only(bottom: 8),
                   decoration: BoxDecoration(
-                    color: AppColors.surfaceLight,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primaryMain.withValues(alpha: 0.05),
-                        offset: const Offset(0, 4),
-                        blurRadius: 12,
-                      ),
-                    ],
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .outline
+                          .withValues(alpha: 0.1),
+                    ),
                   ),
                   child: Material(
                     color: Colors.transparent,
                     child: InkWell(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(12),
                       onTap: () {
                         // Handle notification tap
                       },
                       child: Padding(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(12),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             _buildNotificationIcon(),
-                            const SizedBox(width: 16),
+                            const SizedBox(width: 12),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -201,30 +214,42 @@ class _NotificationScreenState extends State<NotificationScreen>
                                       Expanded(
                                         child: Text(
                                           notification.title,
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w600,
-                                            color: AppColors.textMain,
-                                          ),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleSmall
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                          overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
                                       Text(
                                         _formatTime(notification.createdAt),
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          color: AppColors.textLight,
-                                        ),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.copyWith(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurfaceVariant,
+                                            ),
                                       ),
                                     ],
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
                                     notification.body,
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      color: AppColors.textLight,
-                                      height: 1.4,
-                                    ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurfaceVariant,
+                                          height: 1.3,
+                                        ),
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 2,
                                   ),
                                 ],
                               ),

@@ -13,6 +13,14 @@ class GroupService {
   Future<Group?> createGroup(
       String name, String description, String creatorId) async {
     try {
+      // Validate inputs
+      if (name.isEmpty) {
+        throw Exception('Group name cannot be empty');
+      }
+      if (description.isEmpty) {
+        throw Exception('Group description cannot be empty');
+      }
+
       final group = Group(
         id: '', // Firestore will generate this
         name: name,
@@ -29,16 +37,25 @@ class GroupService {
         return group;
       } else {
         // Online: Save to Firestore
-        final docRef = await _firestore.collection('groups').add(group.toMap());
-        final newGroup = group.copyWith(id: docRef.id);
-        await docRef.update({'id': docRef.id});
-        return newGroup;
+        try {
+          final docRef =
+              await _firestore.collection('groups').add(group.toMap());
+          final newGroup = group.copyWith(id: docRef.id);
+          await docRef.update({'id': docRef.id});
+          return newGroup;
+        } catch (firestoreError) {
+          if (kDebugMode) {
+            print('Firestore error in createGroup: $firestoreError');
+          }
+          throw Exception(
+              'Failed to save group to Firestore: ${firestoreError.toString()}');
+        }
       }
     } catch (e) {
       if (kDebugMode) {
         print('Error in createGroup: $e');
       }
-      return null;
+      throw Exception('Failed to create group: ${e.toString()}');
     }
   }
 
@@ -52,34 +69,42 @@ class GroupService {
   }
 
   Future<void> inviteMember(String groupId, String email) async {
-    // First, find the user with the given email
-    final userQuery = await _firestore
-        .collection('users')
-        .where('email', isEqualTo: email)
-        .get();
+    try {
+      // First, find the user with the given email
+      final userQuery = await _firestore
+          .collection('users')
+          .where('email', isEqualTo: email)
+          .get();
 
-    if (userQuery.docs.isEmpty) {
-      throw Exception('User not found');
+      if (userQuery.docs.isEmpty) {
+        throw Exception(
+            'User with email $email not found. Make sure they have registered.');
+      }
+
+      final userId = userQuery.docs.first.id;
+
+      // Add the user to the group's members list
+      await _firestore.collection('groups').doc(groupId).update({
+        'members': FieldValue.arrayUnion([userId]),
+      });
+
+      // Get the group details
+      final groupDoc = await _firestore.collection('groups').doc(groupId).get();
+      final groupName = groupDoc.data()?['name'] ?? 'Unknown Group';
+
+      // Send a notification to the invited user
+      await _notificationService.sendNotification(
+        userId,
+        'Group Invitation',
+        'You have been invited to join $groupName',
+        groupId: groupId,
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error in inviteMember: $e');
+      }
+      throw Exception('Failed to invite member: ${e.toString()}');
     }
-
-    final userId = userQuery.docs.first.id;
-
-    // Add the user to the group's members list
-    await _firestore.collection('groups').doc(groupId).update({
-      'members': FieldValue.arrayUnion([userId]),
-    });
-
-    // Get the group details
-    final groupDoc = await _firestore.collection('groups').doc(groupId).get();
-    final groupName = groupDoc.data()?['name'] ?? 'Unknown Group';
-
-    // Send a notification to the invited user
-    await _notificationService.sendNotification(
-      userId,
-      'Group Invitation',
-      'You have been invited to join $groupName',
-      groupId: groupId,
-    );
   }
 
   Future<void> addMember(String groupId, String userId) async {

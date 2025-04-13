@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:splitwise/models/expense.dart';
 import 'package:splitwise/services/database_helper.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
@@ -198,5 +199,55 @@ class ExpenseService {
     // For simplicity, we'll just return the original amount
     // In a real app, you would use an API to get current exchange rates
     return amount;
+  }
+
+  /// Marks a settlement as settled by creating a settlement expense
+  /// This creates a special expense with category 'Settlement' to record the payment
+  /// Returns the created expense if successful
+  Future<Expense?> markSettlementAsSettled(
+      String groupId, String fromUserId, String toUserId, double amount) async {
+    try {
+      // Create a settlement expense
+      final now = DateTime.now();
+      const description = 'Settlement payment';
+
+      // Create split details - only the payer and receiver are involved
+      final splitDetails = <String, double>{
+        toUserId: amount, // The receiver gets the full amount
+      };
+
+      // Create the settlement expense
+      final settlementExpense = Expense(
+        id: '', // Will be set by Firestore
+        groupId: groupId,
+        payerId: fromUserId, // The person who pays
+        amount: amount,
+        currency: _settingsService.currency,
+        description: description,
+        date: now,
+        splitDetails: splitDetails,
+        category: 'Settlement', // Special category for settlements
+        splitMethod: 'Settlement', // Special split method
+      );
+
+      // Save the expense to Firestore
+      final savedExpense = await addExpense(settlementExpense);
+
+      // Send notification to the receiver
+      await _notificationService.sendNotification(
+        toUserId,
+        'Settlement Received',
+        'A settlement of ${_settingsService.currency}${amount.toStringAsFixed(2)} has been marked as complete',
+        groupId: groupId,
+      );
+
+      return savedExpense;
+    } catch (e) {
+      // Log the error
+      if (kDebugMode) {
+        print('Error marking settlement as settled: $e');
+      }
+      return null;
+    }
   }
 }

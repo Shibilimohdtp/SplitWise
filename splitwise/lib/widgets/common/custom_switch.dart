@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:splitwise/utils/app_color.dart';
 
 class CustomSwitch extends StatelessWidget {
   final bool value;
@@ -14,11 +13,13 @@ class CustomSwitch extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
-        width: 50,
-        height: 30,
+        width: 44,
+        height: 24,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(15),
-          color: value ? AppColors.accentMain : Colors.grey.shade300,
+          borderRadius: BorderRadius.circular(12),
+          color: value
+              ? Theme.of(context).colorScheme.onSurface
+              : Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
         ),
         child: AnimatedAlign(
           duration: const Duration(milliseconds: 300),
@@ -27,11 +28,13 @@ class CustomSwitch extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 2),
             child: Container(
-              width: 26,
-              height: 26,
-              decoration: const BoxDecoration(
+              width: 20,
+              height: 20,
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white,
+                color: value
+                    ? Theme.of(context).colorScheme.onPrimary
+                    : Theme.of(context).colorScheme.surface,
               ),
             ),
           ),

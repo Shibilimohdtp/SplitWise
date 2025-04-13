@@ -52,6 +52,7 @@ dependencies:
   flutter_svg: ^2.0.10+1
   firebase_core: ^3.13.0
   path: ^1.9.1
+  google_sign_in: ^6.3.0
 
 flutter_native_splash:
   color: "#FFF5E6"
@@ -89,3 +90,4 @@ flutter:
 
   assets:
     - assets/logo/icon.png
+    - assets/images/

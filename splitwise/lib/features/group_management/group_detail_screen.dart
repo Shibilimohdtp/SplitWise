@@ -3,22 +3,29 @@ import 'package:provider/provider.dart';
 import 'package:splitwise/models/group.dart';
 import 'package:splitwise/models/user.dart';
 import 'package:splitwise/services/auth_service.dart';
+import 'package:splitwise/services/expense_service.dart';
 import 'package:splitwise/services/group_service.dart';
 import 'package:splitwise/services/user_service.dart';
 import 'package:splitwise/features/expense_tracking/add_expense_screen.dart';
-import 'package:splitwise/utils/app_color.dart';
-import 'package:splitwise/widgets/expense_list.dart';
-import 'package:splitwise/features/expense_tracking/expense_analysis_screen.dart';
+
+// Import components
+import 'package:splitwise/features/group_management/components/group_header.dart';
+import 'package:splitwise/features/group_management/components/group_balance_card.dart';
+import 'package:splitwise/features/group_management/components/group_tab_bar.dart';
+import 'package:splitwise/features/group_management/components/group_members_tab.dart';
+import 'package:splitwise/features/group_management/components/group_options_bottom_sheet.dart';
+import 'package:splitwise/features/group_management/components/member_management_dialogs.dart';
+import 'package:splitwise/features/group_management/expense_components/expense_list.dart';
 
 class GroupDetailScreen extends StatefulWidget {
   final Group group;
   const GroupDetailScreen({super.key, required this.group});
 
   @override
-  _GroupDetailScreenState createState() => _GroupDetailScreenState();
+  GroupDetailScreenState createState() => GroupDetailScreenState();
 }
 
-class _GroupDetailScreenState extends State<GroupDetailScreen>
+class GroupDetailScreenState extends State<GroupDetailScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   late GroupService _groupService;
@@ -37,6 +44,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
     _authService = Provider.of<AuthService>(context, listen: false);
     _currentUserId = _authService.currentUser!.uid;
     _loadMembers();
+    _loadBalanceData();
   }
 
   @override
@@ -48,44 +56,157 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
   Future<void> _loadMembers() async {
     try {
       final members = await _userService.getGroupMembers(widget.group.members);
-      setState(() {
-        _members = members;
-        _isLoadingMembers = false;
-      });
+      if (mounted) {
+        setState(() {
+          _members = members;
+          _isLoadingMembers = false;
+        });
+      }
     } catch (e) {
-      setState(() => _isLoadingMembers = false);
-      _showErrorSnackBar('Failed to load members');
+      if (mounted) {
+        setState(() => _isLoadingMembers = false);
+        _showErrorSnackBar('Failed to load members');
+      }
     }
   }
 
   void _showErrorSnackBar(String message) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.error_outline, color: Colors.white),
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Theme.of(context)
+                    .colorScheme
+                    .onError
+                    .withValues(alpha: 0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.error_outline_rounded,
+                  color: Theme.of(context).colorScheme.onError, size: 16),
+            ),
             const SizedBox(width: 12),
-            Expanded(child: Text(message)),
+            Expanded(
+                child: Text(message,
+                    style: const TextStyle(
+                        fontSize: 14, fontWeight: FontWeight.w500))),
           ],
         ),
-        backgroundColor: AppColors.error,
+        backgroundColor: Theme.of(context).colorScheme.error,
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        duration: const Duration(seconds: 4),
+        action: SnackBarAction(
+          label: 'DISMISS',
+          textColor: Theme.of(context).colorScheme.onError,
+          onPressed: () => ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+        ),
       ),
     );
+  }
+
+  void _showSuccessSnackBar(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Theme.of(context)
+                    .colorScheme
+                    .onTertiary
+                    .withValues(alpha: 0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.check_circle_outline_rounded,
+                  color: Theme.of(context).colorScheme.onTertiary, size: 16),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+                child: Text(message,
+                    style: const TextStyle(
+                        fontSize: 14, fontWeight: FontWeight.w500))),
+          ],
+        ),
+        backgroundColor: Theme.of(context).colorScheme.tertiary,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  // Balance data
+  double _youAreOwed = 0.0;
+  double _youOwe = 0.0;
+  double _netBalance = 0.0;
+  bool _isLoadingBalance = true;
+
+  Future<void> _loadBalanceData() async {
+    try {
+      final expenseService =
+          Provider.of<ExpenseService>(context, listen: false);
+      final balances = await expenseService.calculateBalances(widget.group.id);
+
+      double owed = 0.0;
+      double owe = 0.0;
+
+      // Get the current user's balance
+      final userBalance = balances[_currentUserId] ?? 0.0;
+
+      // If positive, user is owed money; if negative, user owes money
+      if (userBalance > 0) {
+        owed = userBalance;
+      } else {
+        owe = userBalance.abs();
+      }
+
+      if (mounted) {
+        setState(() {
+          _youAreOwed = owed;
+          _youOwe = owe;
+          _netBalance = userBalance;
+          _isLoadingBalance = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingBalance = false);
+        _showErrorSnackBar('Failed to load balance data');
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(
         child: Column(
           children: [
-            _buildHeader(),
-            _buildBalanceCard(),
-            _buildTabBar(),
+            GroupHeader(
+              group: widget.group,
+              memberCount: _members.length,
+              onBackPressed: () => Navigator.pop(context),
+              showGroupOptions: _showGroupOptions,
+            ),
+            _isLoadingBalance
+                ? _buildLoadingBalanceCard()
+                : GroupBalanceCard(
+                    youAreOwed: _youAreOwed,
+                    youOwe: _youOwe,
+                    netBalance: _netBalance,
+                  ),
+            GroupTabBar(tabController: _tabController),
             Expanded(
               child: TabBarView(
                 controller: _tabController,
@@ -102,214 +223,6 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
     );
   }
 
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-      decoration: const BoxDecoration(
-        color: AppColors.surfaceLight,
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.cardShadow,
-            offset: Offset(0, 2),
-            blurRadius: 8,
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_back, color: AppColors.textMain),
-                onPressed: () => Navigator.pop(context),
-              ),
-              Expanded(
-                child: Text(
-                  widget.group.name,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textMain,
-                  ),
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.analytics_outlined,
-                    color: AppColors.textMain),
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ExpenseAnalysisScreen(group: widget.group),
-                  ),
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.more_vert, color: AppColors.textMain),
-                onPressed: () => _showGroupOptions(),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              const Icon(
-                Icons.group_outlined,
-                size: 16,
-                color: AppColors.textLight,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '${_members.length} members',
-                style: const TextStyle(
-                  color: AppColors.textLight,
-                  fontSize: 14,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBalanceCard() {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderLight),
-        boxShadow: const [
-          BoxShadow(
-            color: AppColors.cardShadow,
-            offset: Offset(0, 4),
-            blurRadius: 12,
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Group Balance',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textMain,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatItem(
-                  icon: Icons.arrow_upward,
-                  label: 'You are owed',
-                  amount: 125.50,
-                  positive: true,
-                ),
-              ),
-              Container(
-                width: 1,
-                height: 40,
-                color: AppColors.borderLight,
-                margin: const EdgeInsets.symmetric(horizontal: 16),
-              ),
-              Expanded(
-                child: _buildStatItem(
-                  icon: Icons.arrow_downward,
-                  label: 'You owe',
-                  amount: 75.25,
-                  positive: false,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatItem({
-    required IconData icon,
-    required String label,
-    required double amount,
-    required bool positive,
-  }) {
-    final color = positive ? AppColors.success : AppColors.error;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(icon, size: 16, color: color),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 14,
-                color: AppColors.textLight,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Text(
-          '\$${amount.toStringAsFixed(2)}',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTabBar() {
-    return Container(
-      color: AppColors.surfaceLight,
-      child: TabBar(
-        controller: _tabController,
-        indicatorColor: AppColors.primaryMain,
-        indicatorWeight: 3,
-        labelColor: AppColors.textMain,
-        unselectedLabelColor: AppColors.textLight,
-        indicatorSize: TabBarIndicatorSize.label,
-        tabs: const [
-          Tab(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.receipt_outlined),
-                SizedBox(width: 8),
-                Text('EXPENSES'),
-              ],
-            ),
-          ),
-          Tab(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.group_outlined),
-                SizedBox(width: 8),
-                Text('MEMBERS'),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildExpensesTab() {
     return KeepAliveWrapper(
       child: ExpenseList(
@@ -320,137 +233,113 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
   }
 
   Widget _buildMembersTab() {
-    if (_isLoadingMembers) {
-      return const Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryMain),
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: _members.length + 1,
-      itemBuilder: (context, index) {
-        if (index == 0) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Group Members',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textMain,
-                  ),
-                ),
-                TextButton.icon(
-                  onPressed: _showAddMemberDialog,
-                  icon: const Icon(Icons.person_add_outlined),
-                  label: const Text('Add'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.primaryMain,
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  ),
-                ),
-              ],
-            ),
-          );
-        }
-
-        final member = _members[index - 1];
-        return _buildMemberCard(member);
-      },
+    return GroupMembersTab(
+      group: widget.group,
+      members: _members,
+      currentUserId: _currentUserId,
+      isLoadingMembers: _isLoadingMembers,
+      showAddMemberDialog: _showAddMemberDialog,
+      showRemoveMemberDialog: _showRemoveMemberDialog,
     );
   }
 
-  Widget _buildMemberCard(User member) {
-    final isCurrentUser = member.uid == _currentUserId;
-    final canRemove =
-        widget.group.creatorId == _currentUserId && !isCurrentUser;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderLight),
-      ),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: AppColors.secondaryMain.withValues(alpha: 0.1),
-          backgroundImage: member.profileImageUrl != null
-              ? NetworkImage(member.profileImageUrl!)
-              : null,
-          child: member.profileImageUrl == null
-              ? Text(
-                  member.name[0].toUpperCase(),
-                  style: const TextStyle(
-                    color: AppColors.secondaryMain,
-                    fontWeight: FontWeight.w600,
-                  ),
-                )
-              : null,
+  Widget _buildLoadingBalanceCard() {
+    return Card(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
+          width: 1,
         ),
-        title: Row(
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              member.name,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                color: AppColors.textMain,
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .primary
+                        .withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.account_balance_wallet_rounded,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Group Balance',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.1,
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Center(
+              child: SizedBox(
+                height: 100,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                            Theme.of(context).colorScheme.primary),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Calculating balances...',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            if (isCurrentUser)
-              Container(
-                margin: const EdgeInsets.only(left: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryMain.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Text(
-                  'You',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.primaryMain,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
           ],
         ),
-        subtitle: Text(
-          member.email,
-          style: const TextStyle(color: AppColors.textLight),
-        ),
-        trailing: canRemove
-            ? IconButton(
-                icon: const Icon(Icons.remove_circle_outline,
-                    color: AppColors.error),
-                onPressed: () => _showRemoveMemberDialog(member),
-              )
-            : null,
       ),
     );
   }
 
   Widget _buildFloatingActionButton() {
-    return FloatingActionButton.extended(
-      onPressed: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => AddExpenseScreen(group: widget.group),
-        ),
-      ),
-      icon: const Icon(Icons.add_outlined),
-      label: const Text('Add Expense'),
-      backgroundColor: AppColors.primaryMain,
-      foregroundColor: Colors.white,
-      elevation: 4,
+    return FloatingActionButton(
+      onPressed: () async {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => AddExpenseScreen(group: widget.group),
+          ),
+        );
+        // Refresh balance data when returning from add expense screen
+        if (mounted) {
+          _loadBalanceData();
+        }
+      },
+      tooltip: 'Add Expense',
+      backgroundColor: Theme.of(context).colorScheme.primary,
+      foregroundColor: Theme.of(context).colorScheme.onPrimary,
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: const Icon(Icons.add_rounded, size: 24),
     );
   }
 
@@ -458,398 +347,93 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: AppColors.surfaceLight,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.borderMain,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              ListTile(
-                leading: const Icon(Icons.analytics_outlined,
-                    color: AppColors.primaryMain),
-                title: const Text(
-                  'View Analytics',
-                  style: TextStyle(
-                    color: AppColors.textMain,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          ExpenseAnalysisScreen(group: widget.group),
-                    ),
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.share_outlined,
-                    color: AppColors.primaryMain),
-                title: const Text(
-                  'Share Group',
-                  style: TextStyle(
-                    color: AppColors.textMain,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                },
-              ),
-              if (widget.group.creatorId == _currentUserId)
-                ListTile(
-                  leading:
-                      const Icon(Icons.delete_outline, color: AppColors.error),
-                  title: const Text(
-                    'Delete Group',
-                    style: TextStyle(
-                      color: AppColors.error,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _showDeleteGroupDialog();
-                  },
-                ),
-              const SizedBox(height: 8),
-            ],
-          ),
-        ),
+      elevation: 0,
+      isScrollControlled: true,
+      builder: (context) => GroupOptionsBottomSheet(
+        group: widget.group,
+        currentUserId: _currentUserId,
+        showDeleteGroupDialog: _showDeleteGroupDialog,
       ),
     );
   }
 
-  void _showAddMemberDialog() {
-    final TextEditingController emailController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Add New Member',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textMain,
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: emailController,
-                decoration: InputDecoration(
-                  hintText: 'Enter email address',
-                  prefixIcon: const Icon(Icons.email_outlined,
-                      color: AppColors.textLight),
-                  filled: true,
-                  fillColor: AppColors.surfaceLight,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.borderLight),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.borderLight),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.primaryMain),
-                  ),
-                ),
-                keyboardType: TextInputType.emailAddress,
-              ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text(
-                      'Cancel',
-                      style: TextStyle(color: AppColors.textLight),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  ElevatedButton(
-                    onPressed: () async {
-                      final email = emailController.text.trim();
-                      if (email.isNotEmpty) {
-                        try {
-                          await _groupService.inviteMember(
-                              widget.group.id, email);
-                          Navigator.pop(context);
-                          _loadMembers();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content:
-                                  const Text('Invitation sent successfully'),
-                              backgroundColor: AppColors.success,
-                              behavior: SnackBarBehavior.floating,
-                              margin: const EdgeInsets.all(16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          );
-                        } catch (e) {
-                          Navigator.pop(context);
-                          _showErrorSnackBar('Failed to send invitation');
-                        }
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryMain,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 12),
-                    ),
-                    child: const Text('Add Member'),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+  Future<void> _showAddMemberDialog() async {
+    final email = await MemberManagementDialogs.showAddMemberDialog(context);
+    if (email != null && mounted) {
+      _inviteMember(email);
+    }
   }
 
-  void _showRemoveMemberDialog(User member) {
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: AppColors.error.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.person_remove, color: AppColors.error),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Remove Member',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textMain,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Are you sure you want to remove ${member.name} from the group?',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: AppColors.textLight,
-                  fontSize: 16,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Expanded(
-                    child: TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text(
-                        'Cancel',
-                        style: TextStyle(color: AppColors.textLight),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        try {
-                          await _groupService.removeMember(
-                            widget.group.id,
-                            member.uid,
-                          );
-                          Navigator.pop(context);
-                          _loadMembers();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content:
-                                  const Text('Member removed successfully'),
-                              backgroundColor: AppColors.success,
-                              behavior: SnackBarBehavior.floating,
-                              margin: const EdgeInsets.all(16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          );
-                        } catch (e) {
-                          Navigator.pop(context);
-                          _showErrorSnackBar('Failed to remove member');
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.error,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      child: const Text('Remove'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+  Future<void> _showRemoveMemberDialog(User member) async {
+    final shouldRemove =
+        await MemberManagementDialogs.showRemoveMemberDialog(context, member);
+    if (shouldRemove == true && mounted) {
+      _removeMember(member.uid);
+    }
   }
 
-  void _showDeleteGroupDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: AppColors.error.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.delete_outline, color: AppColors.error),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Delete Group',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textMain,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Are you sure you want to delete this group? This action cannot be undone.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: AppColors.textLight,
-                  fontSize: 16,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Expanded(
-                    child: TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text(
-                        'Cancel',
-                        style: TextStyle(color: AppColors.textLight),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        try {
-                          await _groupService.deleteGroup(widget.group.id);
-                          Navigator.pop(context); // Close dialog
-                          Navigator.pop(context); // Return to groups list
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text('Group deleted successfully'),
-                              backgroundColor: AppColors.success,
-                              behavior: SnackBarBehavior.floating,
-                              margin: const EdgeInsets.all(16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          );
-                        } catch (e) {
-                          Navigator.pop(context);
-                          _showErrorSnackBar('Failed to delete group');
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.error,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      child: const Text('Delete'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+  Future<void> _showDeleteGroupDialog() async {
+    final shouldDelete =
+        await MemberManagementDialogs.showDeleteGroupDialog(context);
+    if (shouldDelete == true && mounted) {
+      _deleteGroup();
+    }
+  }
+
+  Future<void> _inviteMember(String email) async {
+    try {
+      await _groupService.inviteMember(widget.group.id, email);
+      if (mounted) {
+        _loadMembers();
+        _showSuccessSnackBar('Invitation sent successfully');
+      }
+    } catch (e) {
+      if (mounted) {
+        _showErrorSnackBar('Failed to send invitation');
+      }
+    }
+  }
+
+  Future<void> _removeMember(String memberId) async {
+    try {
+      await _groupService.removeMember(widget.group.id, memberId);
+      if (mounted) {
+        _loadMembers();
+        _showSuccessSnackBar('Member removed successfully');
+      }
+    } catch (e) {
+      if (mounted) {
+        _showErrorSnackBar('Failed to remove member');
+      }
+    }
+  }
+
+  Future<void> _deleteGroup() async {
+    try {
+      await _groupService.deleteGroup(widget.group.id);
+      if (mounted) {
+        Navigator.pop(context); // Return to groups list
+        _showSuccessSnackBar('Group deleted successfully');
+      }
+    } catch (e) {
+      if (mounted) {
+        _showErrorSnackBar('Failed to delete group');
+      }
+    }
   }
 
   Future<void> _handleDeleteExpense(String expenseId) async {
     try {
       await _groupService.deleteExpense(widget.group.id, expenseId);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Expense deleted successfully'),
-          backgroundColor: AppColors.success,
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.all(16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-      );
+      if (mounted) {
+        _showSuccessSnackBar('Expense deleted successfully');
+        // Refresh balance data after deleting an expense
+        _loadBalanceData();
+      }
     } catch (e) {
-      _showErrorSnackBar('Failed to delete expense');
+      if (mounted) {
+        _showErrorSnackBar('Failed to delete expense');
+      }
     }
   }
 }
@@ -860,10 +444,10 @@ class KeepAliveWrapper extends StatefulWidget {
   const KeepAliveWrapper({super.key, required this.child});
 
   @override
-  _KeepAliveWrapperState createState() => _KeepAliveWrapperState();
+  KeepAliveWrapperState createState() => KeepAliveWrapperState();
 }
 
-class _KeepAliveWrapperState extends State<KeepAliveWrapper>
+class KeepAliveWrapperState extends State<KeepAliveWrapper>
     with AutomaticKeepAliveClientMixin {
   @override
   Widget build(BuildContext context) {
