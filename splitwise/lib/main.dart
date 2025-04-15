@@ -33,7 +33,6 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthService()),
-        ChangeNotifierProvider(create: (_) => SettingsService()),
         Provider<UserService>(create: (_) => UserService()),
         ProxyProvider<SettingsService, ExpenseService>(
           update: (_, settings, __) => ExpenseService(settings),

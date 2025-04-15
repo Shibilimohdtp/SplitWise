@@ -80,10 +80,9 @@ class GroupBalanceCard extends StatelessWidget {
                       const SizedBox(width: 4),
                       Text(
                         '${isPositive ? '+' : ''}\$${netBalance.toStringAsFixed(2)}',
-                        style: TextStyle(
+                        style: textTheme.labelMedium?.copyWith(
                           color: netBalanceColor,
                           fontWeight: FontWeight.w600,
-                          fontSize: 12,
                         ),
                       ),
                     ],
@@ -151,11 +150,10 @@ class GroupBalanceCard extends StatelessWidget {
             const SizedBox(width: 4),
             Text(
               '\$${amount.toStringAsFixed(2)}',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: color,
-                fontSize: 16,
-              ),
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
             ),
           ],
         ),
@@ -165,7 +163,6 @@ class GroupBalanceCard extends StatelessWidget {
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w500,
-                fontSize: 11,
               ),
           textAlign: TextAlign.center,
         ),

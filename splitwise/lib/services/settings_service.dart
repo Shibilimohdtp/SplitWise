@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsService extends ChangeNotifier {
   SharedPreferences? _prefs;
-  String _currency = 'USD';
+  String _currency = 'INR';
   bool _isDarkMode = false;
   bool _isInitialized = false;
   String? _error;
@@ -16,7 +16,7 @@ class SettingsService extends ChangeNotifier {
   Future<void> init() async {
     try {
       _prefs = await SharedPreferences.getInstance();
-      _currency = _prefs?.getString('currency') ?? 'USD';
+      _currency = _prefs?.getString('currency') ?? 'INR';
       _isDarkMode = _prefs?.getBool('isDarkMode') ?? false;
       _isInitialized = true;
       _error = null;

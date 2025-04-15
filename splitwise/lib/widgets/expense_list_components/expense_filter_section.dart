@@ -107,11 +107,9 @@ class ExpenseFilterSection extends StatelessWidget {
               const SizedBox(width: 4),
               Text(
                 'Category',
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
               ),
             ],
           ),
@@ -124,11 +122,9 @@ class ExpenseFilterSection extends StatelessWidget {
                 : Theme.of(context).colorScheme.onSurfaceVariant,
             size: 16,
           ),
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-          ),
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
           onChanged: onCategoryChanged,
           items: [
             DropdownMenuItem<String>(
@@ -144,10 +140,9 @@ class ExpenseFilterSection extends StatelessWidget {
                   const SizedBox(width: 4),
                   Text(
                     'All Categories',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                   ),
                 ],
               ),
@@ -187,10 +182,9 @@ class ExpenseFilterSection extends StatelessWidget {
             const SizedBox(width: 4),
             Text(
               value,
-              style: TextStyle(
-                fontSize: 12,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
             ),
           ],
         ),
@@ -212,7 +206,7 @@ class ExpenseFilterSection extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         child: Container(
           height: 36,
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
           decoration: BoxDecoration(
             color: isActive
                 ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.05)
@@ -241,13 +235,11 @@ class ExpenseFilterSection extends StatelessWidget {
               const SizedBox(width: 4),
               Text(
                 label,
-                style: TextStyle(
-                  color: isActive
-                      ? Theme.of(context).colorScheme.primary
-                      : Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: isActive
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
               ),
             ],
           ),

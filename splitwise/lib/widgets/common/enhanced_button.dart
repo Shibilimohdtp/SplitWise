@@ -14,8 +14,6 @@ class EnhancedButton extends StatelessWidget {
   final String? loadingText;
   final Size? minimumSize;
 
-  /// If [content] is a String, it will be displayed as text.
-  /// If [content] is a Widget, it will be displayed directly.
   const EnhancedButton({
     super.key,
     required this.onPressed,
@@ -59,6 +57,9 @@ class EnhancedButton extends StatelessWidget {
 
     // Determine the effective text style
     final effectiveTextStyle = textStyle ??
+        Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ) ??
         const TextStyle(
           fontWeight: FontWeight.w600,
           fontSize: 16,
@@ -94,27 +95,29 @@ class EnhancedButton extends StatelessWidget {
   /// Builds the loading indicator with optional loading text
   Widget _buildLoadingIndicator(Color color) {
     if (loadingText != null) {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SizedBox(
-            width: loadingIndicatorSize,
-            height: loadingIndicatorSize,
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(color),
-              strokeWidth: 2,
+      return Builder(
+        builder: (context) => Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: loadingIndicatorSize,
+              height: loadingIndicatorSize,
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(color),
+                strokeWidth: 2,
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            loadingText!,
-            style: TextStyle(
-              fontWeight: FontWeight.w500,
-              color: color,
+            const SizedBox(width: 12),
+            Text(
+              loadingText!,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                    color: color,
+                  ),
             ),
-          ),
-        ],
+          ],
+        ),
       );
     }
 
@@ -192,11 +195,5 @@ class EnhancedButton extends StatelessWidget {
       loadingText: loadingText,
       minimumSize: minimumSize,
     );
-  }
-}
-
-extension ColorExtension on Color {
-  Color withValues({double? alpha}) {
-    return Color.fromRGBO(r.toInt(), g.toInt(), b.toInt(), alpha ?? a);
   }
 }

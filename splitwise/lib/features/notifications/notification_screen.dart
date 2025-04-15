@@ -54,19 +54,42 @@ class NotificationScreenState extends State<NotificationScreen>
     }
   }
 
-  Widget _buildNotificationIcon() {
+  Widget _buildNotificationIcon(bool isRead) {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+        color: isRead
+            ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
+            : Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Icon(
-        Icons.notifications_outlined,
+        isRead ? Icons.notifications_outlined : Icons.notifications,
         color: Theme.of(context).colorScheme.primary,
         size: 16,
       ),
     );
+  }
+
+  Future<void> _toggleReadStatus(model.Notification notification) async {
+    await _notificationService.toggleNotificationReadStatus(
+      notification.id,
+      notification.isRead,
+    );
+  }
+
+  Future<void> _markAllAsRead(String userId) async {
+    await _notificationService.markAllNotificationsAsRead(userId);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('All notifications marked as read'),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+        ),
+      );
+    }
   }
 
   @override
@@ -77,7 +100,7 @@ class NotificationScreenState extends State<NotificationScreen>
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
         title: Text(
           'Notifications',
@@ -94,6 +117,33 @@ class NotificationScreenState extends State<NotificationScreen>
           ),
         ),
         actions: [
+          StreamBuilder<List<model.Notification>>(
+            stream: _notificationService.getUserNotifications(userId),
+            builder: (context, snapshot) {
+              final hasUnreadNotifications = snapshot.hasData &&
+                  snapshot.data!.any((notification) => !notification.isRead);
+
+              return IconButton(
+                icon: Icon(
+                  Icons.done_all,
+                  color: hasUnreadNotifications
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context)
+                          .colorScheme
+                          .onSurfaceVariant
+                          .withValues(alpha: 0.5),
+                  size: 20,
+                ),
+                onPressed: hasUnreadNotifications
+                    ? () => _markAllAsRead(userId)
+                    : null,
+                tooltip: 'Mark all as read',
+                style: IconButton.styleFrom(
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: Icon(
               Icons.settings_outlined,
@@ -177,84 +227,147 @@ class NotificationScreenState extends State<NotificationScreen>
               itemCount: snapshot.data!.length,
               itemBuilder: (context, index) {
                 final notification = snapshot.data![index];
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .outline
-                          .withValues(alpha: 0.1),
+                return Dismissible(
+                  key: Key(notification.id),
+                  background: Container(
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.only(right: 20.0),
+                    color: notification.isRead
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.secondary,
+                    child: Icon(
+                      notification.isRead
+                          ? Icons.mark_email_unread_outlined
+                          : Icons.mark_email_read_outlined,
+                      color: Theme.of(context).colorScheme.onPrimary,
                     ),
                   ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
+                  direction: DismissDirection.endToStart,
+                  confirmDismiss: (direction) async {
+                    await _toggleReadStatus(notification);
+                    return false; // Don't actually dismiss the item
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    decoration: BoxDecoration(
+                      color: notification.isRead
+                          ? Theme.of(context).colorScheme.surface
+                          : Theme.of(context)
+                              .colorScheme
+                              .primaryContainer
+                              .withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
-                      onTap: () {
-                        // Handle notification tap
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildNotificationIcon(),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          notification.title,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .titleSmall
-                                              ?.copyWith(
-                                                fontWeight: FontWeight.w600,
+                      border: Border.all(
+                        color: notification.isRead
+                            ? Theme.of(context)
+                                .colorScheme
+                                .outline
+                                .withValues(alpha: 0.1)
+                            : Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withValues(alpha: 0.2),
+                      ),
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () {
+                          // Mark as read when tapped
+                          if (!notification.isRead) {
+                            _notificationService
+                                .markNotificationAsRead(notification.id);
+                          }
+                        },
+                        onLongPress: () {
+                          // Toggle read status on long press
+                          _toggleReadStatus(notification);
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildNotificationIcon(notification.isRead),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            notification.title,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .titleSmall
+                                                ?.copyWith(
+                                                  fontWeight:
+                                                      notification.isRead
+                                                          ? FontWeight.w500
+                                                          : FontWeight.w600,
+                                                ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        Row(
+                                          children: [
+                                            if (!notification.isRead)
+                                              Container(
+                                                width: 8,
+                                                height: 8,
+                                                margin: const EdgeInsets.only(
+                                                    right: 6),
+                                                decoration: BoxDecoration(
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .primary,
+                                                  shape: BoxShape.circle,
+                                                ),
                                               ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                      Text(
-                                        _formatTime(notification.createdAt),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall
-                                            ?.copyWith(
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .onSurfaceVariant,
+                                            Text(
+                                              _formatTime(
+                                                  notification.createdAt),
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodySmall
+                                                  ?.copyWith(
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .onSurfaceVariant,
+                                                  ),
                                             ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    notification.body,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyMedium
-                                        ?.copyWith(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onSurfaceVariant,
-                                          height: 1.3,
+                                          ],
                                         ),
-                                    overflow: TextOverflow.ellipsis,
-                                    maxLines: 2,
-                                  ),
-                                ],
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      notification.body,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.copyWith(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurfaceVariant,
+                                            height: 1.3,
+                                            fontWeight: notification.isRead
+                                                ? FontWeight.normal
+                                                : FontWeight.w500,
+                                          ),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 2,
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),

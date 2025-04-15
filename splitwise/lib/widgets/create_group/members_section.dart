@@ -125,13 +125,12 @@ class MembersSection extends StatelessWidget {
           focusNode: focusNode,
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: TextStyle(
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurfaceVariant
-                  .withValues(alpha: 0.6),
-              fontSize: 14,
-            ),
+            hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurfaceVariant
+                      .withValues(alpha: 0.6),
+                ),
             prefixIcon: Icon(icon,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
                 size: 18),
@@ -255,24 +254,22 @@ class MembersSection extends StatelessWidget {
               const SizedBox(height: 16),
               Text(
                 'No members added yet',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.onSurface,
-                  letterSpacing: 0.2,
-                ),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.onSurface,
+                      letterSpacing: 0.2,
+                    ),
               ),
               const SizedBox(height: 8),
               Text(
                 'Add members to split expenses with',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurfaceVariant
-                      .withValues(alpha: 0.8),
-                ),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurfaceVariant
+                          .withValues(alpha: 0.8),
+                    ),
               ),
             ],
           ),
@@ -294,12 +291,11 @@ class MembersSection extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 'Members List',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.secondary,
-                  letterSpacing: 0.2,
-                ),
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.secondary,
+                      letterSpacing: 0.2,
+                    ),
               ),
             ],
           ),
@@ -352,36 +348,33 @@ class MembersSection extends StatelessWidget {
                     child: Center(
                       child: Text(
                         email[0].toUpperCase(),
-                        style: TextStyle(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSecondaryContainer,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                        ),
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSecondaryContainer,
+                              fontWeight: FontWeight.w600,
+                            ),
                       ),
                     ),
                   ),
                   title: Text(
                     email,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: 0.1,
-                    ),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: 0.1,
+                        ),
                     overflow: TextOverflow.ellipsis,
                   ),
                   subtitle: Text(
                     'Pending invitation',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurfaceVariant
-                          .withValues(alpha: 0.7),
-                      fontStyle: FontStyle.italic,
-                    ),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurfaceVariant
+                              .withValues(alpha: 0.7),
+                          fontStyle: FontStyle.italic,
+                        ),
                   ),
                   trailing: Material(
                     color: Colors.transparent,

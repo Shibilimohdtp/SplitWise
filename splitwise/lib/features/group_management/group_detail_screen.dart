@@ -131,8 +131,9 @@ class GroupDetailScreenState extends State<GroupDetailScreen>
             const SizedBox(width: 12),
             Expanded(
                 child: Text(message,
-                    style: const TextStyle(
-                        fontSize: 14, fontWeight: FontWeight.w500))),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                        color: Theme.of(context).colorScheme.onTertiary))),
           ],
         ),
         backgroundColor: Theme.of(context).colorScheme.tertiary,
@@ -278,7 +279,7 @@ class GroupDetailScreenState extends State<GroupDetailScreen>
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  'Group Balance',
+                  'Balance Summary',
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w600,
                         letterSpacing: 0.1,
@@ -289,7 +290,7 @@ class GroupDetailScreenState extends State<GroupDetailScreen>
             const SizedBox(height: 16),
             Center(
               child: SizedBox(
-                height: 100,
+                height: 60,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -305,10 +306,10 @@ class GroupDetailScreenState extends State<GroupDetailScreen>
                     const SizedBox(height: 12),
                     Text(
                       'Calculating balances...',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        fontSize: 14,
-                      ),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
                     ),
                   ],
                 ),

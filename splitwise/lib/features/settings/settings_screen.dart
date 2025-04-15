@@ -44,7 +44,7 @@ class SettingsScreenState extends State<SettingsScreen>
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
         title: Text(
           'Settings',
@@ -192,10 +192,10 @@ class SettingsScreenState extends State<SettingsScreen>
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               ),
               items: [
+                'INR - Indian Rupee',
                 'USD - US Dollar',
                 'EUR - Euro',
                 'GBP - British Pound',
-                'INR - Indian Rupee',
                 'JPY - Japanese Yen',
               ].map((String currency) {
                 return DropdownMenuItem<String>(
@@ -393,13 +393,12 @@ class SettingsScreenState extends State<SettingsScreen>
                       );
                     },
                     icon: Icon(Icons.privacy_tip_outlined,
-                        size: 16,
-                        color: Theme.of(context).colorScheme.onSurface),
+                        size: 16, color: Theme.of(context).colorScheme.surface),
                     label: Text(
                       'Privacy Policy',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Theme.of(context).colorScheme.onSurface,
+                        color: Theme.of(context).colorScheme.surface,
                       ),
                     ),
                     style: FilledButton.styleFrom(

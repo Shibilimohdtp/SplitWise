@@ -3,14 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:splitwise/services/expense_service.dart';
 import 'package:splitwise/services/settings_service.dart';
 
-// Extension for Color manipulation (keeps the original behavior)
-extension ColorAlpha on Color {
-  Color withValues({double? alpha}) {
-    return withAlpha((alpha != null ? (alpha * 255).round() : (a * 255).round())
-        .clamp(0, 255));
-  }
-}
-
 class BalanceOverviewWidget extends StatefulWidget {
   final String userId;
 
@@ -239,9 +231,8 @@ class BalanceOverviewWidgetState extends State<BalanceOverviewWidget> {
                         const SizedBox(width: 6),
                         Text(
                           'Total Balance',
-                          style: textTheme.titleSmall?.copyWith(
+                          style: textTheme.labelLarge?.copyWith(
                             color: colorScheme.onSurfaceVariant,
-                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
@@ -250,10 +241,9 @@ class BalanceOverviewWidgetState extends State<BalanceOverviewWidget> {
                     // Balance amount
                     Text(
                       '\$${netBalance.abs().toStringAsFixed(2)}',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
+                      style: textTheme.headlineMedium?.copyWith(
                         color: balanceColor,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ],
@@ -280,10 +270,9 @@ class BalanceOverviewWidgetState extends State<BalanceOverviewWidget> {
                     const SizedBox(width: 4),
                     Text(
                       isPositive ? 'Net positive' : 'Net negative',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
+                      style: textTheme.labelMedium?.copyWith(
                         color: balanceColor,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
@@ -509,10 +498,9 @@ class BalanceOverviewWidgetState extends State<BalanceOverviewWidget> {
                 ),
                 child: Text(
                   isPositive ? '+\$24.50' : '-\$12.75', // Placeholder
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
+                  style: textTheme.labelMedium?.copyWith(
                     color: statusColor,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
@@ -698,8 +686,6 @@ class BalanceOverviewWidgetState extends State<BalanceOverviewWidget> {
                   label,
                   style: textTheme.labelSmall?.copyWith(
                     color: colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w500,
-                    fontSize: 10,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -710,10 +696,9 @@ class BalanceOverviewWidgetState extends State<BalanceOverviewWidget> {
           // Amount
           Text(
             amount,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
+            style: textTheme.titleSmall?.copyWith(
               color: color,
+              fontWeight: FontWeight.bold,
             ),
           ),
         ],

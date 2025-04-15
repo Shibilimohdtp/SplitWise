@@ -7,6 +7,7 @@ import 'package:splitwise/services/group_service.dart';
 import 'package:splitwise/services/expense_service.dart';
 import 'package:splitwise/services/settings_service.dart';
 import 'package:splitwise/services/user_service.dart';
+import 'package:splitwise/services/notification_service.dart';
 
 // Import our new component widgets
 import 'package:splitwise/widgets/home_screen/balance_overview_widget.dart';
@@ -26,6 +27,7 @@ class HomeScreenState extends State<HomeScreen>
   late GroupService _groupService;
   late ExpenseService _expenseService;
   late UserService _userService;
+  late NotificationService _notificationService;
   late ScrollController _scrollController;
   bool _isScrolled = false;
   bool _isSearching = false;
@@ -45,6 +47,7 @@ class HomeScreenState extends State<HomeScreen>
     _expenseService =
         ExpenseService(Provider.of<SettingsService>(context, listen: false));
     _userService = UserService();
+    _notificationService = NotificationService();
     _scrollController = ScrollController();
 
     // Setup scroll listener for app bar elevation
@@ -119,36 +122,45 @@ class HomeScreenState extends State<HomeScreen>
         key: const PageStorageKey('group_list_scroll'),
         controller: _scrollController,
         slivers: [
-          HomeppBar(
-            isSearching: _isSearching,
-            isScrolled: _isScrolled,
-            appBarElevation: _appBarElevation,
-            searchController: _searchController,
-            onSearchChanged: (value) {
-              setState(() {
-                _searchQuery = value.trim();
-              });
-            },
-            onSearchToggle: () {
-              setState(() {
-                _isSearching = true;
-              });
-            },
-            onSearchClear: () {
-              setState(() {
-                _isSearching = false;
-                _searchQuery = '';
-                _searchController.clear();
-              });
-            },
-            onNotificationTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const NotificationScreen()),
+          StreamBuilder<int>(
+            stream: _notificationService
+                .getUnreadNotificationCount(authService.currentUser!.uid),
+            builder: (context, snapshot) {
+              final unreadCount = snapshot.hasData ? snapshot.data! : 0;
+              return HomeppBar(
+                isSearching: _isSearching,
+                isScrolled: _isScrolled,
+                appBarElevation: _appBarElevation,
+                searchController: _searchController,
+                unreadNotificationCount: unreadCount,
+                onSearchChanged: (value) {
+                  setState(() {
+                    _searchQuery = value.trim();
+                  });
+                },
+                onSearchToggle: () {
+                  setState(() {
+                    _isSearching = true;
+                  });
+                },
+                onSearchClear: () {
+                  setState(() {
+                    _isSearching = false;
+                    _searchQuery = '';
+                    _searchController.clear();
+                  });
+                },
+                onNotificationTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const NotificationScreen()),
+                  );
+                },
+                onMenuTap: () {
+                  _scaffoldKey.currentState?.openDrawer();
+                },
               );
-            },
-            onMenuTap: () {
-              _scaffoldKey.currentState?.openDrawer();
             },
           ),
           SliverToBoxAdapter(

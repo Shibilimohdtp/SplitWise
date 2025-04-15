@@ -31,15 +31,14 @@ class GroupCardWidgetState extends State<GroupCardWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Card(
       key: ValueKey('group_card_${widget.group.id}'),
       elevation: 1,
-      shadowColor: Theme.of(context).shadowColor.withValues(alpha: 0.1),
+      shadowColor: colorScheme.shadow,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-            color:
-                Theme.of(context).colorScheme.outline.withValues(alpha: 0.1)),
+        side: BorderSide(color: colorScheme.outline.withValues(alpha: 0.1)),
       ),
       child: InkWell(
         onTap: () => Navigator.push(
@@ -425,13 +424,15 @@ class GroupCardWidgetState extends State<GroupCardWidget> {
                       onPressed: () => Navigator.pop(context),
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 6),
-                        textStyle: const TextStyle(fontSize: 13),
+                        textStyle: Theme.of(context).textTheme.labelLarge,
                       ),
                       child: Text(
                         'Cancel',
-                        style: TextStyle(
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant),
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
                       ),
                     ),
                   ),
@@ -449,7 +450,7 @@ class GroupCardWidgetState extends State<GroupCardWidget> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         padding: const EdgeInsets.symmetric(vertical: 8),
-                        textStyle: const TextStyle(fontSize: 13),
+                        textStyle: Theme.of(context).textTheme.labelLarge,
                       ),
                       child: const Text('Delete'),
                     ),
@@ -494,12 +495,10 @@ class GroupCardWidgetState extends State<GroupCardWidget> {
               const SizedBox(width: 6),
               Text(
                 label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.3,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
               ),
             ],
           ),
@@ -546,9 +545,8 @@ class GroupCardWidgetState extends State<GroupCardWidget> {
             child: Center(
               child: Text(
                 group.name.substring(0, 1).toUpperCase(),
-                style: TextStyle(
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: groupColor,
-                  fontSize: 18,
                   fontWeight: FontWeight.w600,
                   shadows: [
                     Shadow(

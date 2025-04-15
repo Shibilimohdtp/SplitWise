@@ -146,10 +146,9 @@ class ProfileScreenState extends State<ProfileScreen>
             Expanded(
               child: Text(
                 message,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Theme.of(context).colorScheme.onTertiary,
-                ),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onTertiary,
+                    ),
               ),
             ),
           ],
@@ -176,10 +175,9 @@ class ProfileScreenState extends State<ProfileScreen>
             Expanded(
               child: Text(
                 message,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Theme.of(context).colorScheme.onError,
-                ),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onError,
+                    ),
               ),
             ),
           ],
@@ -334,12 +332,11 @@ class ProfileScreenState extends State<ProfileScreen>
               contentPadding:
                   const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
             ),
-            style: TextStyle(
-              fontSize: 14,
-              color: readOnly
-                  ? Theme.of(context).colorScheme.onSurfaceVariant
-                  : Theme.of(context).colorScheme.onSurface,
-            ),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: readOnly
+                      ? Theme.of(context).colorScheme.onSurfaceVariant
+                      : Theme.of(context).colorScheme.onSurface,
+                ),
           ),
         ],
       ),
@@ -351,7 +348,7 @@ class ProfileScreenState extends State<ProfileScreen>
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
         title: Text(
           'Profile',

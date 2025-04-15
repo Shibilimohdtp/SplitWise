@@ -74,12 +74,11 @@ class CustomTextField extends StatelessWidget {
         contentPadding:
             const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
       ),
-      style: TextStyle(
-        fontSize: 14,
-        color: readOnly ?? false
-            ? Theme.of(context).colorScheme.onSurfaceVariant
-            : Theme.of(context).colorScheme.onSurface,
-      ),
+      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: readOnly ?? false
+                ? Theme.of(context).colorScheme.onSurfaceVariant
+                : Theme.of(context).colorScheme.onSurface,
+          ),
       obscureText: obscureText,
       validator: validator,
       onSaved: onSaved,

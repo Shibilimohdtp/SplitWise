@@ -94,11 +94,3 @@ List<Settlement> calculateSettlements(Map<String, double> balances) {
   }
   return settlements;
 }
-
-// Extension method for Color to add alpha values
-extension ColorExtension on Color {
-  Color withValues({double? alpha}) {
-    // Use the withValues instance method which is the recommended replacement for withOpacity
-    return this.withValues(alpha: alpha ?? a);
-  }
-}

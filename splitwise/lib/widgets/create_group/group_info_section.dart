@@ -83,13 +83,12 @@ class GroupInfoSection extends StatelessWidget {
           focusNode: focusNode,
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: TextStyle(
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurfaceVariant
-                  .withValues(alpha: 0.6),
-              fontSize: 14,
-            ),
+            hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurfaceVariant
+                      .withValues(alpha: 0.6),
+                ),
             prefixIcon: Icon(icon,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
                 size: 18),
@@ -132,26 +131,23 @@ class GroupInfoSection extends StatelessWidget {
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             helperText: helperText,
-            helperStyle: TextStyle(
-              fontSize: 12,
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurfaceVariant
-                  .withValues(alpha: 0.7),
-              letterSpacing: 0.2,
-            ),
-            errorStyle: TextStyle(
-              fontSize: 12,
-              color: Theme.of(context).colorScheme.error,
-              fontWeight: FontWeight.w500,
-              letterSpacing: 0.2,
-            ),
+            helperStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurfaceVariant
+                      .withValues(alpha: 0.7),
+                  letterSpacing: 0.2,
+                ),
+            errorStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.error,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 0.2,
+                ),
           ),
-          style: TextStyle(
-            fontSize: 14,
-            color: Theme.of(context).colorScheme.onSurface,
-            letterSpacing: 0.1,
-          ),
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+                letterSpacing: 0.1,
+              ),
           maxLines: maxLines,
           validator: validator,
           onFieldSubmitted: onSubmitted,

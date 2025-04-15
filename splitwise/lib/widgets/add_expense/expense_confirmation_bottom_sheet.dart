@@ -1,24 +1,63 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:splitwise/models/expense.dart';
+import 'package:splitwise/models/group.dart';
+import 'package:splitwise/services/expense_service.dart';
 import 'package:splitwise/services/settings_service.dart';
 import 'package:splitwise/services/user_service.dart';
+import 'package:splitwise/widgets/feedback/status_snackbar.dart';
 
-class ExpenseDetailsBottomSheet extends StatelessWidget {
+class ExpenseConfirmationBottomSheet extends StatefulWidget {
   final Expense expense;
-  final String creatorName;
-  final SettingsService settingsService;
+  final Group group;
+  final ExpenseService expenseService;
   final UserService userService;
-  final Function(String) onDeleteExpense;
+  final SettingsService settingsService;
+  final VoidCallback onSuccess;
 
-  const ExpenseDetailsBottomSheet({
+  const ExpenseConfirmationBottomSheet({
     super.key,
     required this.expense,
-    required this.creatorName,
-    required this.settingsService,
+    required this.group,
+    required this.expenseService,
     required this.userService,
-    required this.onDeleteExpense,
+    required this.settingsService,
+    required this.onSuccess,
   });
+
+  static Future<bool> show({
+    required BuildContext context,
+    required Expense expense,
+    required Group group,
+    required ExpenseService expenseService,
+    required UserService userService,
+    required SettingsService settingsService,
+    required VoidCallback onSuccess,
+  }) async {
+    return await showModalBottomSheet<bool>(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (context) => ExpenseConfirmationBottomSheet(
+            expense: expense,
+            group: group,
+            expenseService: expenseService,
+            userService: userService,
+            settingsService: settingsService,
+            onSuccess: onSuccess,
+          ),
+        ) ??
+        false;
+  }
+
+  @override
+  State<ExpenseConfirmationBottomSheet> createState() =>
+      _ExpenseConfirmationBottomSheetState();
+}
+
+class _ExpenseConfirmationBottomSheetState
+    extends State<ExpenseConfirmationBottomSheet> {
+  bool _isSubmitting = false;
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +67,7 @@ class ExpenseDetailsBottomSheet extends StatelessWidget {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: DraggableScrollableSheet(
-        initialChildSize: 0.6,
+        initialChildSize: 0.7,
         minChildSize: 0.5,
         maxChildSize: 0.95,
         expand: false,
@@ -43,18 +82,14 @@ class ExpenseDetailsBottomSheet extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildExpenseHeader(context),
+                      _buildHeader(context),
                       const SizedBox(height: 16),
                       _buildExpenseInfo(context),
-                      if (expense.comment?.isNotEmpty ?? false) ...[
-                        const SizedBox(height: 24),
-                        _buildCommentSection(context),
-                      ],
                       const SizedBox(height: 24),
                       _buildSplitDetails(context),
-                      if (expense.receiptUrl != null) ...[
+                      if (widget.expense.comment?.isNotEmpty ?? false) ...[
                         const SizedBox(height: 24),
-                        _buildReceiptButton(context),
+                        _buildCommentSection(context),
                       ],
                       const SizedBox(height: 32),
                       _buildActionButtons(context),
@@ -81,7 +116,7 @@ class ExpenseDetailsBottomSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildExpenseHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -89,7 +124,7 @@ class ExpenseDetailsBottomSheet extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                expense.description,
+                'Confirm Expense',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: Theme.of(context).colorScheme.onSurface,
@@ -99,26 +134,35 @@ class ExpenseDetailsBottomSheet extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color:
-                    _getCategoryColor(expense.category).withValues(alpha: 0.1),
+                color: _getCategoryColor(widget.expense.category)
+                    .withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                expense.category,
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: _getCategoryColor(expense.category),
-                      fontWeight: FontWeight.w600,
-                    ),
+                widget.expense.category,
+                style: TextStyle(
+                  color: _getCategoryColor(widget.expense.category),
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                ),
               ),
             ),
           ],
         ),
         const SizedBox(height: 8),
         Text(
-          '${settingsService.currency}${expense.amount.toStringAsFixed(2)}',
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.primary,
+          '${widget.expense.currency}${widget.expense.amount.toStringAsFixed(2)}',
+          style: TextStyle(
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          widget.expense.description,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
               ),
         ),
       ],
@@ -139,9 +183,9 @@ class ExpenseDetailsBottomSheet extends StatelessWidget {
         children: [
           _buildInfoRow(
             context: context,
-            icon: Icons.person_outline,
-            label: 'Paid by',
-            value: creatorName,
+            icon: Icons.group_outlined,
+            label: 'Group',
+            value: widget.group.name,
           ),
           Divider(
             height: 20,
@@ -151,7 +195,7 @@ class ExpenseDetailsBottomSheet extends StatelessWidget {
             context: context,
             icon: Icons.calendar_today_outlined,
             label: 'Date',
-            value: DateFormat('MMMM d, yyyy').format(expense.date),
+            value: DateFormat('MMMM d, yyyy').format(widget.expense.date),
           ),
           Divider(
             height: 20,
@@ -159,10 +203,9 @@ class ExpenseDetailsBottomSheet extends StatelessWidget {
           ),
           _buildInfoRow(
             context: context,
-            icon: Icons.category_outlined,
-            label: 'Category',
-            value: expense.category,
-            valueColor: _getCategoryColor(expense.category),
+            icon: Icons.calculate_outlined,
+            label: 'Split Method',
+            value: widget.expense.splitMethod,
           ),
         ],
       ),
@@ -199,11 +242,11 @@ class ExpenseDetailsBottomSheet extends StatelessWidget {
             ),
             Text(
               value,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color:
-                        valueColor ?? Theme.of(context).colorScheme.onSurface,
-                    fontWeight: FontWeight.w600,
-                  ),
+              style: TextStyle(
+                color: valueColor ?? Theme.of(context).colorScheme.onSurface,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         ),
@@ -242,7 +285,7 @@ class ExpenseDetailsBottomSheet extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            expense.comment!,
+            widget.expense.comment!,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                   height: 1.4,
@@ -287,10 +330,10 @@ class ExpenseDetailsBottomSheet extends StatelessWidget {
             future: _buildSplitDetailsList(context),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return Center(
-                  child: CircularProgressIndicator(
-                    color: Theme.of(context).colorScheme.primary,
-                    strokeWidth: 2.5,
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: CircularProgressIndicator(strokeWidth: 2.5),
                   ),
                 );
               }
@@ -311,12 +354,12 @@ class ExpenseDetailsBottomSheet extends StatelessWidget {
     final primaryColor = Theme.of(context).colorScheme.primary;
 
     List<Widget> widgets = [];
-    final entries = expense.splitDetails.entries.toList();
+    final entries = widget.expense.splitDetails.entries.toList();
 
     for (int i = 0; i < entries.length; i++) {
       final entry = entries[i];
       final isLastItem = i == entries.length - 1;
-      final userName = await userService.getUserName(entry.key);
+      final userName = await widget.userService.getUserName(entry.key);
 
       widgets.add(
         Container(
@@ -341,7 +384,7 @@ class ExpenseDetailsBottomSheet extends StatelessWidget {
                 ),
               ),
               Text(
-                '${settingsService.currency}${entry.value.toStringAsFixed(2)}',
+                '${widget.settingsService.currency}${entry.value.toStringAsFixed(2)}',
                 style: TextStyle(
                   color: primaryColor,
                   fontSize: 14,
@@ -356,134 +399,76 @@ class ExpenseDetailsBottomSheet extends StatelessWidget {
     return widgets;
   }
 
-  Widget _buildReceiptButton(BuildContext context) {
-    return FilledButton.icon(
-      onPressed: () => _viewReceipt(context),
-      icon: const Icon(Icons.receipt_outlined, size: 18),
-      label: const Text('View Receipt'),
-      style: FilledButton.styleFrom(
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Theme.of(context).colorScheme.onPrimary,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-        textStyle: const TextStyle(fontSize: 14),
-      ),
-    );
-  }
-
   Widget _buildActionButtons(BuildContext context) {
     return Row(
       children: [
         Expanded(
           child: OutlinedButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed:
+                _isSubmitting ? null : () => Navigator.of(context).pop(false),
             style: OutlinedButton.styleFrom(
               foregroundColor: Theme.of(context).colorScheme.onSurface,
               side: BorderSide(color: Theme.of(context).colorScheme.outline),
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              padding: const EdgeInsets.symmetric(vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
               textStyle: const TextStyle(fontSize: 14),
             ),
-            child: const Text('Close'),
+            child: const Text('Cancel'),
           ),
         ),
         const SizedBox(width: 8),
         Expanded(
           child: FilledButton(
-            onPressed: () {
-              Navigator.pop(context);
-              onDeleteExpense(expense.id);
-            },
+            onPressed: _isSubmitting ? null : _submitExpense,
             style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-              foregroundColor: Theme.of(context).colorScheme.onError,
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+              padding: const EdgeInsets.symmetric(vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
               textStyle: const TextStyle(fontSize: 14),
             ),
-            child: const Text('Delete'),
+            child: _isSubmitting
+                ? SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    ),
+                  )
+                : const Text('Confirm'),
           ),
         ),
       ],
     );
   }
 
-  Future<void> _viewReceipt(BuildContext context) async {
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.receipt_outlined,
-                        size: 16,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Receipt',
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                      ),
-                    ],
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      Icons.close,
-                      size: 20,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                    style: IconButton.styleFrom(
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      minimumSize: const Size(36, 36),
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height * 0.6,
-              ),
-              child: ClipRRect(
-                borderRadius:
-                    const BorderRadius.vertical(bottom: Radius.circular(16)),
-                child: Image.network(
-                  expense.receiptUrl!,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) => Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Text(
-                      'Failed to load receipt image',
-                      style:
-                          TextStyle(color: Theme.of(context).colorScheme.error),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+  Future<void> _submitExpense() async {
+    if (_isSubmitting) return;
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      await widget.expenseService.addExpense(widget.expense);
+
+      if (mounted) {
+        Navigator.pop(context, true);
+        widget.onSuccess();
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context, false);
+        StatusSnackbar.showError(
+          context,
+          message: 'Failed to add expense',
+          details: 'Please try again.',
+        );
+      }
+    }
   }
 
   Color _getCategoryColor(String category) {
@@ -503,3 +488,5 @@ class ExpenseDetailsBottomSheet extends StatelessWidget {
     }
   }
 }
+
+// Using the ColorExtension from app_color.dart

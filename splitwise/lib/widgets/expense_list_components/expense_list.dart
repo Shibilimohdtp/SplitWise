@@ -254,7 +254,7 @@ class ExpenseListState extends State<ExpenseList> {
 
   Widget _buildDateHeader(String date) {
     return Padding(
-      padding: const EdgeInsets.only(top: 10, bottom: 4, left: 4),
+      padding: const EdgeInsets.only(top: 10, bottom: 8, left: 4),
       child: Row(
         children: [
           Icon(
@@ -265,11 +265,10 @@ class ExpenseListState extends State<ExpenseList> {
           const SizedBox(width: 4),
           Text(
             date,
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
           ),
         ],
       ),

@@ -90,6 +90,45 @@ class NotificationService {
         .update({'isRead': true});
   }
 
+  Future<void> markNotificationAsUnread(String notificationId) async {
+    await _firestore
+        .collection('notifications')
+        .doc(notificationId)
+        .update({'isRead': false});
+  }
+
+  Future<void> toggleNotificationReadStatus(
+      String notificationId, bool currentStatus) async {
+    await _firestore
+        .collection('notifications')
+        .doc(notificationId)
+        .update({'isRead': !currentStatus});
+  }
+
+  Stream<int> getUnreadNotificationCount(String userId) {
+    return _firestore
+        .collection('notifications')
+        .where('userId', isEqualTo: userId)
+        .where('isRead', isEqualTo: false)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.length);
+  }
+
+  Future<void> markAllNotificationsAsRead(String userId) async {
+    final batch = _firestore.batch();
+    final unreadNotifications = await _firestore
+        .collection('notifications')
+        .where('userId', isEqualTo: userId)
+        .where('isRead', isEqualTo: false)
+        .get();
+
+    for (var doc in unreadNotifications.docs) {
+      batch.update(doc.reference, {'isRead': true});
+    }
+
+    await batch.commit();
+  }
+
   Future<void> sendNotification(String userId, String title, String body,
       {String? groupId}) async {
     // In a real app, you'd send this to your server to handle FCM sending

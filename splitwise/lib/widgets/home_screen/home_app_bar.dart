@@ -10,6 +10,7 @@ class HomeppBar extends StatelessWidget {
   final VoidCallback onSearchClear;
   final VoidCallback onNotificationTap;
   final VoidCallback onMenuTap;
+  final int? unreadNotificationCount;
 
   const HomeppBar({
     super.key,
@@ -22,7 +23,65 @@ class HomeppBar extends StatelessWidget {
     required this.onSearchClear,
     required this.onNotificationTap,
     required this.onMenuTap,
+    this.unreadNotificationCount,
   });
+
+  Widget _buildNotificationButton(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        IconButton(
+          icon: Icon(
+            Icons.notifications_none_rounded,
+            color: Theme.of(context).colorScheme.onSurface,
+            size: 22,
+          ),
+          onPressed: onNotificationTap,
+          tooltip: 'Notifications',
+          style: IconButton.styleFrom(
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            backgroundColor: isScrolled
+                ? Theme.of(context).colorScheme.surface.withValues(alpha: 0.8)
+                : Colors.transparent,
+            padding: const EdgeInsets.all(8),
+          ),
+        ),
+        if (unreadNotificationCount != null && unreadNotificationCount! > 0)
+          Positioned(
+            top: 0,
+            right: 0,
+            child: Container(
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.error,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.surface,
+                  width: 1.5,
+                ),
+              ),
+              constraints: const BoxConstraints(
+                minWidth: 16,
+                minHeight: 16,
+              ),
+              child: Center(
+                child: Text(
+                  unreadNotificationCount! > 9
+                      ? '9+'
+                      : unreadNotificationCount!.toString(),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onError,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -67,18 +126,16 @@ class HomeppBar extends StatelessWidget {
               autofocus: true,
               decoration: InputDecoration(
                 hintText: 'Search groups...',
-                hintStyle: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontSize: 16,
-                ),
+                hintStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                 border: InputBorder.none,
                 contentPadding:
                     const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
               ),
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface,
-                fontSize: 16,
-              ),
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
               onChanged: onSearchChanged,
             )
           : null,
@@ -100,23 +157,7 @@ class HomeppBar extends StatelessWidget {
               padding: const EdgeInsets.all(8),
             ),
           ),
-        if (!isSearching)
-          IconButton(
-            icon: Icon(
-              Icons.notifications_none_rounded,
-              color: Theme.of(context).colorScheme.onSurface,
-              size: 22,
-            ),
-            onPressed: onNotificationTap,
-            tooltip: 'Notifications',
-            style: IconButton.styleFrom(
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              backgroundColor: isScrolled
-                  ? Theme.of(context).colorScheme.surface.withValues(alpha: 0.8)
-                  : Colors.transparent,
-              padding: const EdgeInsets.all(8),
-            ),
-          ),
+        if (!isSearching) _buildNotificationButton(context),
         if (isSearching && searchController.text.isNotEmpty)
           IconButton(
             icon: Icon(

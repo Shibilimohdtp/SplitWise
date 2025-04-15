@@ -102,30 +102,27 @@ class ActionBottomBar extends StatelessWidget {
             children: [
               Text(
                 'Total Amount',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: colorScheme.onSurfaceVariant,
-                ),
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w500,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
               ),
               Row(
                 children: [
                   Text(
                     currency,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.primary,
-                    ),
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.primary,
+                        ),
                   ),
                   const SizedBox(width: 4),
                   Text(
                     amount.toStringAsFixed(2),
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.primary,
-                    ),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.primary,
+                        ),
                   ),
                 ],
               ),
@@ -134,11 +131,5 @@ class ActionBottomBar extends StatelessWidget {
         },
       ),
     );
-  }
-}
-
-extension ColorExtension on Color {
-  Color withValues({double? alpha}) {
-    return Color.fromRGBO(r.toInt(), g.toInt(), b.toInt(), alpha ?? a);
   }
 }

@@ -19,7 +19,7 @@ class CustomSwitch extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           color: value
               ? Theme.of(context).colorScheme.onSurface
-              : Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+              : Theme.of(context).colorScheme.outline,
         ),
         child: AnimatedAlign(
           duration: const Duration(milliseconds: 300),
@@ -33,7 +33,7 @@ class CustomSwitch extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: value
-                    ? Theme.of(context).colorScheme.onPrimary
+                    ? Theme.of(context).colorScheme.primary
                     : Theme.of(context).colorScheme.surface,
               ),
             ),

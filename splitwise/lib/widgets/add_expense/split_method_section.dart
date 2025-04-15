@@ -19,6 +19,9 @@ class SplitMethodSection extends StatelessWidget {
   final Function(String, double) onPercentageSplitChanged;
   final Function(String, int) onShareSplitChanged;
 
+  // Get the total amount from the parent widget
+  final double? totalAmount;
+
   const SplitMethodSection({
     super.key,
     required this.group,
@@ -33,6 +36,7 @@ class SplitMethodSection extends StatelessWidget {
     required this.onCustomSplitChanged,
     required this.onPercentageSplitChanged,
     required this.onShareSplitChanged,
+    this.totalAmount,
   });
 
   @override
@@ -57,6 +61,10 @@ class SplitMethodSection extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             _buildSplitInputs(context),
+            if (totalAmount != null && totalAmount! > 0) ...[
+              const SizedBox(height: 16),
+              _buildSplitSummary(context),
+            ],
           ],
         ],
       ),
@@ -362,5 +370,127 @@ class SplitMethodSection extends StatelessWidget {
       default:
         return '';
     }
+  }
+
+  Widget _buildSplitSummary(BuildContext context) {
+    if (totalAmount == null || totalAmount! <= 0) {
+      return const SizedBox.shrink();
+    }
+
+    double totalAllocated = 0;
+    double totalPercentage = 0;
+    int totalShares = 0;
+
+    // Calculate totals based on split method
+    final activeParticipants = participants.entries
+        .where((entry) => entry.value)
+        .map((entry) => entry.key)
+        .toList();
+
+    switch (splitMethod) {
+      case 'Exact':
+        totalAllocated = activeParticipants.fold<double>(
+          0,
+          (sum, uid) => sum + (customSplitAmounts[uid] ?? 0),
+        );
+        break;
+
+      case 'Percentage':
+        totalPercentage = activeParticipants.fold<double>(
+          0,
+          (sum, uid) => sum + (percentageSplits[uid] ?? 0),
+        );
+        break;
+
+      case 'Shares':
+        totalShares = activeParticipants.fold<int>(
+          0,
+          (sum, uid) => sum + (shareSplits[uid] ?? 1),
+        );
+        break;
+    }
+
+    // Build the summary widget based on split method
+    bool isValid = true;
+    String message = '';
+
+    switch (splitMethod) {
+      case 'Exact':
+        final difference = (totalAmount! - totalAllocated).abs();
+        isValid = difference < 0.01; // Allow small rounding errors
+
+        if (totalAllocated == 0) {
+          message = 'Please specify amounts';
+        } else if (!isValid) {
+          message = totalAllocated > totalAmount!
+              ? 'Total exceeds expense amount by ${(totalAllocated - totalAmount!).toStringAsFixed(2)}'
+              : 'Total is short by ${(totalAmount! - totalAllocated).toStringAsFixed(2)}';
+        } else {
+          message = 'Total: ${totalAmount!.toStringAsFixed(2)}';
+        }
+        break;
+
+      case 'Percentage':
+        isValid =
+            (totalPercentage - 100).abs() < 0.01; // Allow small rounding errors
+
+        if (totalPercentage == 0) {
+          message = 'Please specify percentages';
+        } else if (!isValid) {
+          message = totalPercentage > 100
+              ? 'Total exceeds 100% by ${(totalPercentage - 100).toStringAsFixed(1)}%'
+              : 'Total is short by ${(100 - totalPercentage).toStringAsFixed(1)}%';
+        } else {
+          message = 'Total: 100%';
+        }
+        break;
+
+      case 'Shares':
+        if (totalShares == 0) {
+          isValid = false;
+          message = 'Please specify shares';
+        } else {
+          message = 'Total: $totalShares shares';
+          isValid = true;
+        }
+        break;
+
+      default:
+        return const SizedBox.shrink();
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isValid
+            ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
+            : Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            isValid ? Icons.check_circle_outline : Icons.error_outline,
+            size: 18,
+            color: isValid
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.error,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: isValid
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.error,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

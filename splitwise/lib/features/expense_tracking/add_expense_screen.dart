@@ -11,6 +11,7 @@ import 'package:splitwise/widgets/add_expense/expense_details_section.dart';
 import 'package:splitwise/widgets/add_expense/participants_section.dart';
 import 'package:splitwise/widgets/add_expense/split_method_section.dart';
 import 'package:splitwise/widgets/add_expense/additional_details_section.dart';
+import 'package:splitwise/widgets/add_expense/expense_confirmation_bottom_sheet.dart';
 import 'package:splitwise/widgets/common/action_bottom_bar.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -74,6 +75,14 @@ class AddExpenseScreenState extends State<AddExpenseScreen> {
       _percentageSplits[memberId] = 0;
       _shareSplits[memberId] = 1;
     }
+
+    // Add listener to amount controller to update the UI when amount changes
+    _amountController.addListener(() {
+      // This will trigger a rebuild when the amount changes
+      if (mounted) {
+        setState(() {});
+      }
+    });
   }
 
   @override
@@ -177,6 +186,7 @@ class AddExpenseScreenState extends State<AddExpenseScreen> {
                   _shareSplits[memberId] = shares;
                 });
               },
+              totalAmount: double.tryParse(_amountController.text),
             ),
             const SizedBox(height: 12),
             AdditionalDetailsSection(
@@ -257,6 +267,11 @@ class AddExpenseScreenState extends State<AddExpenseScreen> {
 
     final amount = double.tryParse(_amountController.text) ?? 0;
 
+    // If no active participants, return empty map
+    if (activeParticipants.isEmpty) {
+      return {};
+    }
+
     switch (_splitMethod) {
       case 'Equal':
         final splitAmount = amount / activeParticipants.length;
@@ -265,18 +280,66 @@ class AddExpenseScreenState extends State<AddExpenseScreen> {
         );
 
       case 'Exact':
-        return Map.fromEntries(
-          activeParticipants.map(
-            (uid) => MapEntry(uid, _customSplitAmounts[uid] ?? 0),
-          ),
-        );
+        // Calculate the sum of all custom split amounts
+        final Map<String, double> exactSplits = {};
+        double totalAllocated = 0;
+
+        // First pass: get all specified amounts
+        for (var uid in activeParticipants) {
+          final splitAmount = _customSplitAmounts[uid] ?? 0;
+          exactSplits[uid] = splitAmount;
+          totalAllocated += splitAmount;
+        }
+
+        // If the total doesn't match, adjust the values proportionally
+        if (totalAllocated != 0 && totalAllocated != amount) {
+          final adjustmentFactor = amount / totalAllocated;
+          for (var uid in activeParticipants) {
+            exactSplits[uid] = (exactSplits[uid]! * adjustmentFactor);
+          }
+        } else if (totalAllocated == 0) {
+          // If no amounts were specified, default to equal split
+          final equalShare = amount / activeParticipants.length;
+          for (var uid in activeParticipants) {
+            exactSplits[uid] = equalShare;
+          }
+        }
+
+        return exactSplits;
 
       case 'Percentage':
+        // Calculate the sum of all percentages
+        double totalPercentage = 0;
+        final Map<String, double> percentageSplits = {};
+
+        // First pass: get all specified percentages
+        for (var uid in activeParticipants) {
+          final percentage = _percentageSplits[uid] ?? 0;
+          percentageSplits[uid] = percentage;
+          totalPercentage += percentage;
+        }
+
+        // If the total percentage doesn't add up to 100%, adjust proportionally
+        if (totalPercentage != 0 && totalPercentage != 100) {
+          final adjustmentFactor = 100 / totalPercentage;
+          for (var uid in activeParticipants) {
+            percentageSplits[uid] = percentageSplits[uid]! * adjustmentFactor;
+          }
+          totalPercentage = 100; // Now it should be exactly 100%
+        } else if (totalPercentage == 0) {
+          // If no percentages were specified, default to equal percentages
+          final equalPercentage = 100 / activeParticipants.length;
+          for (var uid in activeParticipants) {
+            percentageSplits[uid] = equalPercentage;
+          }
+        }
+
+        // Convert percentages to actual amounts
         return Map.fromEntries(
           activeParticipants.map(
             (uid) => MapEntry(
               uid,
-              (_percentageSplits[uid] ?? 0) * amount / 100,
+              (percentageSplits[uid]! * amount / 100),
             ),
           ),
         );
@@ -286,6 +349,15 @@ class AddExpenseScreenState extends State<AddExpenseScreen> {
           0,
           (sum, uid) => sum + (_shareSplits[uid] ?? 1),
         );
+
+        // If no shares were specified, default to 1 share each
+        if (totalShares == 0) {
+          final equalShare = amount / activeParticipants.length;
+          return Map.fromEntries(
+            activeParticipants.map((uid) => MapEntry(uid, equalShare)),
+          );
+        }
+
         final valuePerShare = amount / totalShares;
         return Map.fromEntries(
           activeParticipants.map(
@@ -307,47 +379,144 @@ class AddExpenseScreenState extends State<AddExpenseScreen> {
 
       if (_isSubmitting) return;
 
-      setState(() => _isSubmitting = true);
+      // Validate that we have active participants
+      final activeParticipants = _participants.entries
+          .where((entry) => entry.value)
+          .map((entry) => entry.key)
+          .toList();
 
-      try {
-        final authService = Provider.of<AuthService>(context, listen: false);
-        final settingsService =
-            Provider.of<SettingsService>(context, listen: false);
-        final splitDetails = _calculateSplitDetails();
-        final amount = double.tryParse(_amountController.text) ?? 0;
-
-        final expense = Expense(
-          id: '',
-          groupId: widget.group.id,
-          payerId: authService.currentUser!.uid,
-          amount: amount,
-          currency: settingsService.currency,
-          description: _descriptionController.text,
-          date: DateTime.now(),
-          splitDetails: splitDetails,
-          category: _category,
-          comment: _commentController.text,
-          splitMethod: _splitMethod,
-          receiptUrl: _receiptImageUrl,
-        );
-
-        await _expenseService.addExpense(expense);
-
-        if (mounted) {
-          Navigator.pop(context);
-        }
-      } catch (e) {
+      if (activeParticipants.isEmpty) {
         if (mounted) {
           StatusSnackbar.showError(
             context,
-            message: 'Failed to add expense',
-            details: 'Please try again.',
+            message: 'No participants selected',
+            details: 'Please select at least one participant.',
           );
         }
-      } finally {
+        return;
+      }
+
+      // Validate the amount
+      final amount = double.tryParse(_amountController.text) ?? 0;
+      if (amount <= 0) {
         if (mounted) {
-          setState(() => _isSubmitting = false);
+          StatusSnackbar.showError(
+            context,
+            message: 'Invalid amount',
+            details: 'Please enter a valid amount greater than zero.',
+          );
         }
+        return;
+      }
+
+      // Validate split details for non-equal splits
+      if (_splitMethod != 'Equal') {
+        bool isValid = true;
+        String errorMessage = '';
+
+        switch (_splitMethod) {
+          case 'Exact':
+            final totalAllocated = activeParticipants.fold<double>(
+              0,
+              (sum, uid) => sum + (_customSplitAmounts[uid] ?? 0),
+            );
+            if (totalAllocated == 0) {
+              isValid = false;
+              errorMessage =
+                  'Please specify at least one amount for the exact split.';
+            }
+            break;
+
+          case 'Percentage':
+            final totalPercentage = activeParticipants.fold<double>(
+              0,
+              (sum, uid) => sum + (_percentageSplits[uid] ?? 0),
+            );
+            if (totalPercentage == 0) {
+              isValid = false;
+              errorMessage =
+                  'Please specify at least one percentage for the percentage split.';
+            }
+            break;
+
+          case 'Shares':
+            final totalShares = activeParticipants.fold<int>(
+              0,
+              (sum, uid) => sum + (_shareSplits[uid] ?? 1),
+            );
+            if (totalShares == 0) {
+              isValid = false;
+              errorMessage =
+                  'Please specify at least one share for the shares split.';
+            }
+            break;
+        }
+
+        if (!isValid) {
+          if (mounted) {
+            StatusSnackbar.showError(
+              context,
+              message: 'Invalid split details',
+              details: errorMessage,
+            );
+          }
+          return;
+        }
+      }
+
+      // Prepare the expense data
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final settingsService =
+          Provider.of<SettingsService>(context, listen: false);
+      final splitDetails = _calculateSplitDetails();
+
+      // Double-check that the split details sum up to the total amount
+      final totalSplit =
+          splitDetails.values.fold<double>(0, (sum, value) => sum + value);
+      final adjustedSplitDetails = Map<String, double>.from(splitDetails);
+
+      // If there's a small rounding error, adjust the first participant's amount
+      if (totalSplit != amount && splitDetails.isNotEmpty) {
+        final firstParticipant = splitDetails.keys.first;
+        final difference = amount - totalSplit;
+        adjustedSplitDetails[firstParticipant] =
+            (splitDetails[firstParticipant] ?? 0) + difference;
+      }
+
+      final expense = Expense(
+        id: '',
+        groupId: widget.group.id,
+        payerId: authService.currentUser!.uid,
+        amount: amount,
+        currency: settingsService.currency,
+        description: _descriptionController.text,
+        date: DateTime.now(),
+        splitDetails: adjustedSplitDetails,
+        category: _category,
+        comment: _commentController.text,
+        splitMethod: _splitMethod,
+        receiptUrl: _receiptImageUrl,
+      );
+
+      // Show confirmation bottom sheet
+      setState(() => _isSubmitting = true);
+
+      await ExpenseConfirmationBottomSheet.show(
+        context: context,
+        expense: expense,
+        group: widget.group,
+        expenseService: _expenseService,
+        userService: _userService,
+        settingsService: settingsService,
+        onSuccess: () {
+          if (mounted) {
+            Navigator.pop(context);
+          }
+        },
+      );
+
+      if (mounted) {
+        setState(() => _isSubmitting = false);
       }
     }
   }

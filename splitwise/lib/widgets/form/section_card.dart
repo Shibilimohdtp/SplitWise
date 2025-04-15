@@ -1,29 +1,13 @@
 import 'package:flutter/material.dart';
 
-/// A reusable card component for form sections with consistent styling
 class SectionCard extends StatelessWidget {
-  /// The content to display inside the card
   final Widget child;
-
-  /// Optional custom padding for the card content
   final EdgeInsetsGeometry? padding;
-
-  /// Optional custom margin for the card
   final EdgeInsetsGeometry? margin;
-
-  /// Optional custom border radius for the card
   final BorderRadius? borderRadius;
-
-  /// Optional custom elevation for the card
   final double? elevation;
-
-  /// Optional custom background color for the card
   final Color? backgroundColor;
-
-  /// Optional custom border color for the card
   final Color? borderColor;
-
-  /// Optional custom shadow color for the card
   final Color? shadowColor;
 
   const SectionCard({
@@ -70,11 +54,5 @@ class SectionCard extends StatelessWidget {
         child: child,
       ),
     );
-  }
-}
-
-extension ColorExtension on Color {
-  Color withValues({double? alpha}) {
-    return Color.fromRGBO(r.toInt(), g.toInt(), b.toInt(), alpha ?? a);
   }
 }

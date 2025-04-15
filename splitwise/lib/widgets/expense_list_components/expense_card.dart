@@ -40,10 +40,9 @@ class ExpenseCard extends StatelessWidget {
                 color: Theme.of(context).colorScheme.onError, size: 18),
             const SizedBox(height: 2),
             Text('Delete',
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onError,
-                  fontSize: 12,
-                )),
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onError,
+                    )),
           ],
         ),
       ),
@@ -51,7 +50,7 @@ class ExpenseCard extends StatelessWidget {
         onDelete(expense);
       },
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4),
+        margin: const EdgeInsets.symmetric(vertical: 2),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
@@ -105,11 +104,10 @@ class ExpenseCard extends StatelessWidget {
                   children: [
                     Text(
                       '${settingsService.currency}${expense.amount.toStringAsFixed(2)}',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
                     ),
                     const SizedBox(height: 4),
                     Container(
@@ -122,11 +120,10 @@ class ExpenseCard extends StatelessWidget {
                       ),
                       child: Text(
                         expense.category,
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: Theme.of(context).colorScheme.surface,
-                          fontWeight: FontWeight.w500,
-                        ),
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: Theme.of(context).colorScheme.surface,
+                              fontWeight: FontWeight.w500,
+                            ),
                       ),
                     ),
                   ],

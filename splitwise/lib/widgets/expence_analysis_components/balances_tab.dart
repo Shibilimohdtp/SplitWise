@@ -133,16 +133,14 @@ class BalancesTab extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text(
                     isCredit ? 'To receive' : 'To pay',
-                    style: TextStyle(
+                    style: textTheme.bodyMedium?.copyWith(
                       color: colorScheme.onSurfaceVariant,
-                      fontSize: 14,
                     ),
                   ),
                   const SizedBox(height: 16),
                   Text(
                     '${settingsService.currency}${entry.value.abs().toStringAsFixed(2)}',
-                    style: TextStyle(
-                      fontSize: 24,
+                    style: textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.w700,
                       color: valueColor,
                     ),
@@ -223,8 +221,7 @@ class BalancesTab extends StatelessWidget {
                         const SizedBox(width: 4),
                         Text(
                           isCredit ? 'Receives' : 'Pays',
-                          style: TextStyle(
-                            fontSize: 10,
+                          style: textTheme.labelSmall?.copyWith(
                             fontWeight: FontWeight.w600,
                             color: valueColor,
                           ),

@@ -136,15 +136,15 @@ class GroupMembersTab extends StatelessWidget {
                   child: member.profileImageUrl == null
                       ? Text(
                           member.name[0].toUpperCase(),
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: isCurrentUser
-                                ? Theme.of(context).colorScheme.primary
-                                : Theme.of(context)
-                                    .colorScheme
-                                    .onSecondaryContainer,
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.labelLarge?.copyWith(
+                                    color: isCurrentUser
+                                        ? Theme.of(context).colorScheme.primary
+                                        : Theme.of(context)
+                                            .colorScheme
+                                            .onSecondaryContainer,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                         )
                       : null,
                 ),
@@ -199,11 +199,13 @@ class GroupMembersTab extends StatelessWidget {
                           ),
                           child: Text(
                             'You',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: Theme.of(context).colorScheme.primary,
-                              fontWeight: FontWeight.w500,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelSmall
+                                ?.copyWith(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  fontWeight: FontWeight.w500,
+                                ),
                           ),
                         ),
                       if (isCreator && !isCurrentUser)
@@ -219,11 +221,13 @@ class GroupMembersTab extends StatelessWidget {
                           ),
                           child: Text(
                             'Creator',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: Theme.of(context).colorScheme.tertiary,
-                              fontWeight: FontWeight.w500,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelSmall
+                                ?.copyWith(
+                                  color: Theme.of(context).colorScheme.tertiary,
+                                  fontWeight: FontWeight.w500,
+                                ),
                           ),
                         ),
                     ],
