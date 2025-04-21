@@ -94,7 +94,12 @@ class ExpenseAnalysisScreenState extends State<ExpenseAnalysisScreen>
             decoration: BoxDecoration(
               color: colorScheme.surfaceContainerLowest,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: outlineColor),
+              border: Border.all(
+                color: Theme.of(context)
+                    .colorScheme
+                    .outline
+                    .withValues(alpha: 0.3),
+              ),
             ),
             child: TabBar(
               controller: _tabController,

@@ -112,11 +112,11 @@ class ParticipantsSection extends StatelessWidget {
                         ? Theme.of(context)
                             .colorScheme
                             .primary
-                            .withValues(alpha: 0.2)
+                            .withValues(alpha: 0.3)
                         : Theme.of(context)
                             .colorScheme
                             .outline
-                            .withValues(alpha: 0.1),
+                            .withValues(alpha: 0.2),
                   ),
                 ),
                 child: InkWell(

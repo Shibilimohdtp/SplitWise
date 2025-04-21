@@ -111,7 +111,7 @@ class GroupInfoSection extends StatelessWidget {
                   color: Theme.of(context)
                       .colorScheme
                       .outline
-                      .withValues(alpha: 0.1)),
+                      .withValues(alpha: 0.3)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),

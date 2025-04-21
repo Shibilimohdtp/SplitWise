@@ -103,7 +103,7 @@ class SplitMethodSection extends StatelessWidget {
                           : Theme.of(context)
                               .colorScheme
                               .outline
-                              .withValues(alpha: 0.1),
+                              .withValues(alpha: 0.3),
                       width: isSelected ? 1.5 : 1,
                     ),
                   ),

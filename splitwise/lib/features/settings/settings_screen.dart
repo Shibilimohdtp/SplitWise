@@ -109,7 +109,7 @@ class SettingsScreenState extends State<SettingsScreen>
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
         ),
       ),
       child: Padding(
@@ -180,7 +180,7 @@ class SettingsScreenState extends State<SettingsScreen>
                     color: Theme.of(context)
                         .colorScheme
                         .outline
-                        .withValues(alpha: 0.1),
+                        .withValues(alpha: 0.3),
                   ),
                 ),
                 focusedBorder: OutlineInputBorder(
@@ -234,7 +234,7 @@ class SettingsScreenState extends State<SettingsScreen>
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
         ),
       ),
       child: Padding(
@@ -294,7 +294,7 @@ class SettingsScreenState extends State<SettingsScreen>
                   color: Theme.of(context)
                       .colorScheme
                       .outline
-                      .withValues(alpha: 0.1),
+                      .withValues(alpha: 0.3),
                 ),
               ),
               child: Row(
@@ -341,7 +341,7 @@ class SettingsScreenState extends State<SettingsScreen>
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
         ),
       ),
       child: Padding(
@@ -424,7 +424,7 @@ class SettingsScreenState extends State<SettingsScreen>
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
-            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
             width: 1,
           ),
         ),

@@ -262,11 +262,11 @@ class NotificationScreenState extends State<NotificationScreen>
                             ? Theme.of(context)
                                 .colorScheme
                                 .outline
-                                .withValues(alpha: 0.1)
+                                .withValues(alpha: 0.3)
                             : Theme.of(context)
                                 .colorScheme
                                 .primary
-                                .withValues(alpha: 0.2),
+                                .withValues(alpha: 0.5),
                       ),
                     ),
                     child: Material(

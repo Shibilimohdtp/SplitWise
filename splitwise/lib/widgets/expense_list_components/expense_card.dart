@@ -22,23 +22,22 @@ class ExpenseCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Dismissible(
       key: Key(expense.id),
-      direction: DismissDirection.endToStart,
+      direction: DismissDirection.startToEnd,
       confirmDismiss: (direction) async {
         return await _showDeleteConfirmationDialog(context);
       },
       background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 16),
+        alignment: Alignment.centerLeft,
+        padding: const EdgeInsets.only(left: 16),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.error,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Row(
           children: [
             Icon(Icons.delete_outline,
                 color: Theme.of(context).colorScheme.onError, size: 18),
-            const SizedBox(height: 2),
+            const SizedBox(width: 8),
             Text('Delete',
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       color: Theme.of(context).colorScheme.onError,
@@ -55,14 +54,14 @@ class ExpenseCard extends StatelessWidget {
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
           ),
           boxShadow: [
             BoxShadow(
               color:
                   Theme.of(context).colorScheme.shadow.withValues(alpha: 0.05),
               offset: const Offset(0, 1),
-              blurRadius: 3,
+              blurRadius: 12,
             ),
           ],
         ),

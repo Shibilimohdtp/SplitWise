@@ -321,7 +321,7 @@ class ProfileScreenState extends State<ProfileScreen>
                   color: Theme.of(context)
                       .colorScheme
                       .outline
-                      .withValues(alpha: 0.1),
+                      .withValues(alpha: 0.3),
                 ),
               ),
               focusedBorder: OutlineInputBorder(
@@ -398,7 +398,7 @@ class ProfileScreenState extends State<ProfileScreen>
                                 color: Theme.of(context)
                                     .colorScheme
                                     .outline
-                                    .withValues(alpha: 0.1),
+                                    .withValues(alpha: 0.3),
                               ),
                             ),
                             child: Column(

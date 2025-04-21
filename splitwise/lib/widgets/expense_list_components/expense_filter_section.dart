@@ -32,7 +32,7 @@ class ExpenseFilterSection extends StatelessWidget {
         color: Theme.of(context).colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
         ),
       ),
       margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
@@ -88,8 +88,8 @@ class ExpenseFilterSection extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: selectedCategory != null
-              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)
-              : Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
+              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.4)
+              : Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -214,11 +214,11 @@ class ExpenseFilterSection extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: isActive
-                  ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)
+                  ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)
                   : Theme.of(context)
                       .colorScheme
                       .outline
-                      .withValues(alpha: 0.1),
+                      .withValues(alpha: 0.3),
               width: 1,
             ),
           ),

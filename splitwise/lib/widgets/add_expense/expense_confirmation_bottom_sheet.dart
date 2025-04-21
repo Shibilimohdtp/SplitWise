@@ -176,7 +176,7 @@ class _ExpenseConfirmationBottomSheetState
         color: Theme.of(context).colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
         ),
       ),
       child: Column(
@@ -189,7 +189,7 @@ class _ExpenseConfirmationBottomSheetState
           ),
           Divider(
             height: 20,
-            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
           ),
           _buildInfoRow(
             context: context,
@@ -199,7 +199,7 @@ class _ExpenseConfirmationBottomSheetState
           ),
           Divider(
             height: 20,
-            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
           ),
           _buildInfoRow(
             context: context,
@@ -261,7 +261,7 @@ class _ExpenseConfirmationBottomSheetState
         color: Theme.of(context).colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
         ),
       ),
       child: Column(
@@ -323,7 +323,7 @@ class _ExpenseConfirmationBottomSheetState
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color:
-                  Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
+                  Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
             ),
           ),
           child: FutureBuilder<List<Widget>>(
@@ -348,7 +348,7 @@ class _ExpenseConfirmationBottomSheetState
   Future<List<Widget>> _buildSplitDetailsList(BuildContext context) async {
     // Capture theme values before async operations
     final outlineColor =
-        Theme.of(context).colorScheme.outline.withValues(alpha: 0.1);
+        Theme.of(context).colorScheme.outline.withValues(alpha: 0.3);
     final textStyle = Theme.of(context).textTheme.bodyMedium;
     final onSurfaceColor = Theme.of(context).colorScheme.onSurface;
     final primaryColor = Theme.of(context).colorScheme.primary;

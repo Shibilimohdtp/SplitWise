@@ -59,7 +59,7 @@ class AdditionalDetailsSection extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color:
-                  Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
+                  Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
             ),
           ),
           padding: const EdgeInsets.all(16),
@@ -91,7 +91,7 @@ class AdditionalDetailsSection extends StatelessWidget {
                         color: Theme.of(context)
                             .colorScheme
                             .outline
-                            .withValues(alpha: 0.1),
+                            .withValues(alpha: 0.3),
                         width: 1.5,
                       ),
                     ),
@@ -137,7 +137,7 @@ class AdditionalDetailsSection extends StatelessWidget {
                           color: Theme.of(context)
                               .colorScheme
                               .outline
-                              .withValues(alpha: 0.1),
+                              .withValues(alpha: 0.3),
                         ),
                       ),
                       child: ClipRRect(

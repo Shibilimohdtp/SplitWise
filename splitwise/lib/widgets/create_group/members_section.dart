@@ -153,7 +153,7 @@ class MembersSection extends StatelessWidget {
                   color: Theme.of(context)
                       .colorScheme
                       .outline
-                      .withValues(alpha: 0.1)),
+                      .withValues(alpha: 0.3)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -230,7 +230,7 @@ class MembersSection extends StatelessWidget {
               .withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
           ),
         ),
         child: Center(

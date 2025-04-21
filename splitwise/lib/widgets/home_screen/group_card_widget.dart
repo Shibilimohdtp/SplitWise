@@ -34,7 +34,7 @@ class GroupCardWidgetState extends State<GroupCardWidget> {
     final colorScheme = Theme.of(context).colorScheme;
     return Card(
       key: ValueKey('group_card_${widget.group.id}'),
-      elevation: 1,
+      elevation: 0.2,
       shadowColor: colorScheme.shadow,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
@@ -156,7 +156,7 @@ class GroupCardWidgetState extends State<GroupCardWidget> {
                       color: Theme.of(context)
                           .colorScheme
                           .outline
-                          .withValues(alpha: 0.1),
+                          .withValues(alpha: 0.2),
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(

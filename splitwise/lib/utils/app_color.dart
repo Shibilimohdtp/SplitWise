@@ -8,46 +8,49 @@ extension ColorExtension on Color {
 }
 
 class AppColors {
-  // Primary Colors - Rich Navy
-  static const Color primaryLight = Color(0xFF526D82);
-  static const Color primaryMain = Color(0xFF27374D); // Rich Navy
-  static const Color primaryDark = Color(0xFF1B2430);
+  // Primary Colors - Warm Orange/Coral
+  static const Color primaryLight = Color(0xFFEB9C64); // primary-100
+  static const Color primaryMain = Color(0xFFFF8789); // primary-200
+  static const Color primaryDark = Color(0xFF554E4F); // primary-300
 
-  // Secondary Colors - Sage/Green tones
-  static const Color secondaryLight = Color(0xFF9DB2BF);
-  static const Color secondaryMain = Color(0xFF526D82); // Muted Blue
-  static const Color secondaryDark = Color(0xFF27374D);
+  // Secondary/Accent Colors - Green tones
+  static const Color secondaryLight = Color(0xFF8FBF9F); // accent-100
+  static const Color secondaryMain = Color(0xFF346145); // accent-200
+  static const Color secondaryDark =
+      Color(0xFF254733); // Darker shade of accent-200
 
-  // Dark Theme Primary Colors - Brighter for better contrast
+  // Dark Theme Primary Colors - Adjusted for better contrast in dark mode
   static const Color primaryLightDarkTheme =
-      Color(0xFF8EACBD); // Lighter blue for dark theme
+      Color(0xFFF1B78D); // Lighter version of primary-100 for dark theme
   static const Color primaryMainDarkTheme =
-      Color(0xFF5D8AA8); // Medium blue for dark theme
+      Color(0xFFFF9A9B); // Lighter version of primary-200 for dark theme
   static const Color primaryDarkDarkTheme =
-      Color(0xFF3A6A8B); // Darker blue for dark theme
+      Color(0xFF7A7273); // Lighter version of primary-300 for dark theme
 
   // Accent Colors - For highlights and important elements
-  static const Color accentLight = Color(0xFFDDE6ED);
-  static const Color accentMain = Color(0xFF9DB2BF); // Soft Blue
-  static const Color accentDark = Color(0xFF526D82);
+  static const Color accentLight = Color(0xFF8FBF9F); // accent-100
+  static const Color accentMain = Color(0xFF346145); // accent-200
+  static const Color accentDark =
+      Color(0xFF254733); // Darker shade of accent-200
 
-  // Background Colors - Warm but bright
-  static const Color backgroundLight = Color(0xFFF5F7F8); // Bright off-white
-  static const Color backgroundMain = Color(0xFFEEF2F5); // Soft grey-white
-  static const Color backgroundDark = Color(0xFFE4E9EC); // Light grey
+  // Background Colors - Warm beige tones
+  static const Color backgroundLight = Color(0xFFF5ECD7); // bg-100
+  static const Color backgroundMain = Color(0xFFEBE2CD); // bg-200
+  static const Color backgroundDark = Color(0xFFC2BAA6); // bg-300
 
   // Dark Theme Background Colors
   static const Color backgroundDarkTheme =
-      Color(0xFF121212); // Standard dark background
+      Color(0xFF1E1C19); // Dark version of bg-100
   static const Color surfaceDarkTheme =
-      Color(0xFF1E1E1E); // Slightly lighter than background
+      Color(0xFF2A2723); // Dark version of bg-200
   static const Color cardDarkTheme =
-      Color(0xFF2C2C2C); // Card background for dark theme
+      Color(0xFF35322C); // Dark version of bg-300
 
   // Text Colors
-  static const Color textLight = Color(0xFF526D82); // Softer text
-  static const Color textMain = Color(0xFF27374D); // Main text
-  static const Color textDark = Color(0xFF1B2430); // Bold text
+  static const Color textLight =
+      Color(0xFF555555); // Lighter version of text-100
+  static const Color textMain = Color(0xFF353535); // text-100
+  static const Color textDark = Color(0xFF000000); // text-200
 
   // Dark Theme Text Colors
   static const Color textLightDarkTheme =
@@ -65,37 +68,41 @@ class AppColors {
 
   // Gradient Colors
   static const List<Color> primaryGradient = [
-    Color(0xFF27374D),
-    Color(0xFF526D82)
+    Color(0xFF554E4F),
+    Color(0xFFFF8789)
   ];
   static const List<Color> secondaryGradient = [
-    Color(0xFF526D82),
-    Color(0xFF9DB2BF)
+    Color(0xFF346145),
+    Color(0xFF8FBF9F)
   ];
   static const List<Color> accentGradient = [
-    Color(0xFF9DB2BF),
-    Color(0xFFDDE6ED)
+    Color(0xFF8FBF9F),
+    Color(0xFFEBE2CD)
   ];
 
-  // Surface Colors - Clean and bright
-  static const Color surfaceLight = Color(0xFFFFFFFF); // Pure white
-  static const Color surfaceMedium = Color(0xFFF8FAFC); // Slight off-white
-  static const Color surfaceDark = Color(0xFFF1F4F6); // Light grey
+  // Surface Colors - Warm beige tones
+  static const Color surfaceLight = Color(0xFFFFFBF0); // Lightest beige
+  static const Color surfaceMedium = Color(0xFFF5ECD7); // bg-100
+  static const Color surfaceDark = Color(0xFFEBE2CD); // bg-200
 
-  // Border Colors - Subtle but visible
-  static const Color borderLight = Color(0xFFE2E8F0); // Light border
-  static const Color borderMain = Color(0xFFCBD5E1); // Medium border
-  static const Color borderDark = Color(0xFF94A3B8); // Dark border
+  // Border Colors - Enhanced contrast for better visibility
+  static const Color borderLight =
+      Color(0xFF9E9784); // Light border (darker for better contrast)
+  static const Color borderMain =
+      Color(0xFF7D7666); // Medium border (darker than bg-300)
+  static const Color borderDark =
+      Color(0xFF554E4F); // Dark border (using primary-300 for consistency)
 
   // Dark Theme Border Colors
   static const Color borderLightDarkTheme =
-      Color(0xFF3A3A3A); // Light border for dark theme
+      Color(0xFF8A847A); // Light border for dark theme (higher contrast)
   static const Color borderMainDarkTheme =
-      Color(0xFF505050); // Medium border for dark theme
+      Color(0xFFADA598); // Medium border for dark theme (higher contrast)
 
   // Card Colors - For elevated surfaces
-  static const Color cardLight = Color(0xFFFFFFFF); // White cards
-  static const Color cardShadow = Color(0x1A27374D); // Subtle shadow
+  static const Color cardLight = Color(0xFFFFFBF0); // Light beige cards
+  static const Color cardShadow =
+      Color(0x1A554E4F); // Subtle shadow using primary-300
   static const Color cardShadowDarkTheme =
       Color(0x40000000); // Shadow for dark theme
 
@@ -104,7 +111,9 @@ class AppColors {
   static const Color negativeBalance = Color(0xFFE74C3C); // Money user owes
 
   // Interactive Elements
-  static const Color buttonPrimary = Color(0xFF27374D); // Primary buttons
-  static const Color buttonSecondary = Color(0xFF526D82); // Secondary buttons
-  static const Color rippleEffect = Color(0x1A27374D); // Touch feedback
+  static const Color buttonPrimary =
+      Color(0xFFFF8789); // Primary buttons (primary-200)
+  static const Color buttonSecondary =
+      Color(0xFF346145); // Secondary buttons (accent-200)
+  static const Color rippleEffect = Color(0x1AFF8789); // Touch feedback
 }

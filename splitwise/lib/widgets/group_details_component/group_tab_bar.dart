@@ -12,7 +12,7 @@ class GroupTabBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final outlineColor = colorScheme.outline.withValues(alpha: 0.1);
+    final outlineColor = colorScheme.outline.withValues(alpha: 0.3);
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

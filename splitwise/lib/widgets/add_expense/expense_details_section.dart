@@ -54,7 +54,7 @@ class _ExpenseDetailsSectionState extends State<ExpenseDetailsSection> {
             .withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
         ),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -95,8 +95,8 @@ class _ExpenseDetailsSectionState extends State<ExpenseDetailsSection> {
         color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
-          width: 1.5,
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+          width: 1,
         ),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

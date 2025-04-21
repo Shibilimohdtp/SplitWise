@@ -34,7 +34,7 @@ class SectionCard extends StatelessWidget {
         borderRadius: borderRadius ?? BorderRadius.circular(12),
         side: BorderSide(
           color:
-              borderColor ?? theme.colorScheme.outline.withValues(alpha: 0.1),
+              borderColor ?? theme.colorScheme.outline.withValues(alpha: 0.3),
         ),
       ),
       child: Container(
