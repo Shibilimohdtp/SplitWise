@@ -35,10 +35,11 @@ class _ExpenseDetailsSectionState extends State<ExpenseDetailsSection> {
             title: 'Expense Details',
             icon: Icons.receipt_outlined,
           ),
+          const SizedBox(height: 12),
           _buildDescriptionField(),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           _buildAmountField(),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           _buildCategorySelector(),
         ],
       ),
@@ -46,44 +47,25 @@ class _ExpenseDetailsSectionState extends State<ExpenseDetailsSection> {
   }
 
   Widget _buildDescriptionField() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context)
+    return TextFormField(
+      controller: widget.descriptionController,
+      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: Theme.of(context)
             .colorScheme
             .surfaceContainerHighest
             .withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
-        ),
+        labelText: 'Description',
+        hintText: 'What was this expense for?',
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        contentPadding:
+            const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Description',
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-          ),
-          const SizedBox(height: 8),
-          TextFormField(
-            controller: widget.descriptionController,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-            decoration: const InputDecoration(
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-              isDense: true,
-              hintText: 'What was this expense for?',
-            ),
-            validator: (value) =>
-                value!.isEmpty ? 'Please enter a description' : null,
-          ),
-        ],
-      ),
+      validator: (value) =>
+          value!.isEmpty ? 'Please enter a description' : null,
     );
   }
 
@@ -96,10 +78,9 @@ class _ExpenseDetailsSectionState extends State<ExpenseDetailsSection> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
-          width: 1,
         ),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -111,17 +92,16 @@ class _ExpenseDetailsSectionState extends State<ExpenseDetailsSection> {
           ),
           const SizedBox(height: 8),
           Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
                   color: Theme.of(context)
                       .colorScheme
                       .primary
                       .withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
                   currency,
@@ -131,22 +111,22 @@ class _ExpenseDetailsSectionState extends State<ExpenseDetailsSection> {
                       ),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 12),
               Expanded(
                 child: TextFormField(
                   controller: widget.amountController,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: Theme.of(context).colorScheme.onSurface,
                       ),
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
                   decoration: const InputDecoration(
                     border: InputBorder.none,
-                    contentPadding:
-                        EdgeInsets.symmetric(vertical: 4, horizontal: 12),
-                    isDense: true,
                     hintText: '0.00',
+                    contentPadding:
+                        EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                    isDense: true,
                   ),
                   validator: (value) =>
                       value!.isEmpty ? 'Please enter an amount' : null,
@@ -163,98 +143,85 @@ class _ExpenseDetailsSectionState extends State<ExpenseDetailsSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 8),
-          child: Text(
-            'Category',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
+        Text(
+          'Category',
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
         ),
-        // Use a horizontal scrollable list instead of a grid
+        const SizedBox(height: 12),
         SizedBox(
-          height: 80,
-          child: ListView.builder(
+          height: 90,
+          child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
             itemCount: widget.categories.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 10),
             itemBuilder: (context, index) {
               final category = widget.categories[index];
               final isSelected = widget.selectedCategory == category;
 
-              return Container(
-                width: 80,
-                margin: const EdgeInsets.only(right: 8),
-                child: GestureDetector(
-                  onTap: () => widget.onCategorySelected(category),
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                    decoration: BoxDecoration(
+              return GestureDetector(
+                onTap: () => widget.onCategorySelected(category),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: 80,
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? _getCategoryColor(category).withValues(alpha: 0.2)
+                        : Theme.of(context)
+                            .colorScheme
+                            .surfaceContainerHighest
+                            .withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
                       color: isSelected
-                          ? _getCategoryColor(category).withValues(alpha: 0.2)
+                          ? _getCategoryColor(category)
                           : Theme.of(context)
                               .colorScheme
-                              .surfaceContainerHighest
+                              .outline
                               .withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isSelected
-                            ? _getCategoryColor(category)
-                            : Theme.of(context)
-                                .colorScheme
-                                .outline
-                                .withValues(alpha: 0.1),
-                        width: isSelected ? 1.5 : 1,
+                      width: isSelected ? 1.5 : 1,
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? _getCategoryColor(category)
+                                  .withValues(alpha: 0.1)
+                              : Theme.of(context).colorScheme.surface,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          _getCategoryIcon(category),
+                          color: isSelected
+                              ? _getCategoryColor(category)
+                              : Theme.of(context).colorScheme.onSurfaceVariant,
+                          size: 24,
+                        ),
                       ),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? _getCategoryColor(category)
-                                    .withValues(alpha: 0.1)
-                                : Theme.of(context)
-                                    .colorScheme
-                                    .surfaceContainerHighest,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            _getCategoryIcon(category),
-                            color: isSelected
-                                ? _getCategoryColor(category)
-                                : Theme.of(context)
-                                    .colorScheme
-                                    .onSurfaceVariant,
-                            size: 24,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          category,
-                          style:
-                              Theme.of(context).textTheme.labelSmall?.copyWith(
-                                    fontWeight: isSelected
-                                        ? FontWeight.w600
-                                        : FontWeight.normal,
-                                    color: isSelected
-                                        ? _getCategoryColor(category)
-                                        : Theme.of(context)
-                                            .colorScheme
-                                            .onSurfaceVariant,
-                                  ),
-                          textAlign: TextAlign.center,
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                        ),
-                      ],
-                    ),
+                      const SizedBox(height: 8),
+                      Text(
+                        category,
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
+                              color: isSelected
+                                  ? _getCategoryColor(category)
+                                  : Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                            ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
                 ),
               );

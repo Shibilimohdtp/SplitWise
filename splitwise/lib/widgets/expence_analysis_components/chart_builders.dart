@@ -232,7 +232,8 @@ class ChartBuilders {
             final color = getDistributionColor(index);
             return FutureBuilder<String>(
               // Fetch name for legend item
-              future: userService.getUserName(entry.key),
+              future: userService.isUser(entry.key).then((isUser) =>
+                  isUser ? userService.getUserName(entry.key) : entry.key),
               builder: (context, nameSnapshot) {
                 return Container(
                   padding:

@@ -33,16 +33,16 @@ dependencies:
   cached_network_image: ^3.4.1
 
 flutter_native_splash:
-  color: "#F5ECD7"
+  color: "#F8F9FA"
   image: assets/logo/Logo.png
-  color_dark: "#F5ECD7"
+  color_dark: "#0D1B2A"
   image_dark: assets/logo/Logo.png
 
   android_12:
     image: assets/logo/Logo.png
-    icon_background_color: "#F5ECD7"
+    icon_background_color: "#F8F9FA"
     image_dark: assets/logo/Logo.png
-    icon_background_color_dark: "#F5ECD7"
+    icon_background_color_dark: "#0D1B2A"
 
   ios: true
   fullscreen: true

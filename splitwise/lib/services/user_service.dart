@@ -120,4 +120,10 @@ class UserService {
     }
     return users;
   }
+
+  Future<bool> isUser(String userId) async {
+    DocumentSnapshot userDoc =
+        await _firestore.collection('users').doc(userId).get();
+    return userDoc.exists;
+  }
 }

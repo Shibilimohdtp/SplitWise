@@ -132,7 +132,7 @@ class ExpenseDetailsBottomSheet extends StatelessWidget {
         color: Theme.of(context).colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
         ),
       ),
       child: Column(
@@ -218,7 +218,7 @@ class ExpenseDetailsBottomSheet extends StatelessWidget {
         color: Theme.of(context).colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
         ),
       ),
       child: Column(
@@ -280,7 +280,7 @@ class ExpenseDetailsBottomSheet extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color:
-                  Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
+                  Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
             ),
           ),
           child: FutureBuilder<List<Widget>>(
@@ -305,7 +305,7 @@ class ExpenseDetailsBottomSheet extends StatelessWidget {
   Future<List<Widget>> _buildSplitDetailsList(BuildContext context) async {
     // Capture theme values before async operations
     final outlineColor =
-        Theme.of(context).colorScheme.outline.withValues(alpha: 0.1);
+        Theme.of(context).colorScheme.outline.withValues(alpha: 0.3);
     final textStyle = Theme.of(context).textTheme.bodyMedium;
     final onSurfaceColor = Theme.of(context).colorScheme.onSurface;
     final primaryColor = Theme.of(context).colorScheme.primary;
@@ -316,7 +316,9 @@ class ExpenseDetailsBottomSheet extends StatelessWidget {
     for (int i = 0; i < entries.length; i++) {
       final entry = entries[i];
       final isLastItem = i == entries.length - 1;
-      final userName = await userService.getUserName(entry.key);
+      final isInvited = !await userService.isUser(entry.key);
+      final userName =
+          isInvited ? entry.key : await userService.getUserName(entry.key);
 
       widgets.add(
         Container(

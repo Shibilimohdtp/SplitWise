@@ -80,7 +80,7 @@ class GroupCardWidgetState extends State<GroupCardWidget> {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              '${widget.group.members.length} members',
+                              '${widget.group.memberIds.length + widget.group.invitedEmails.length} members',
                               style: Theme.of(context)
                                   .textTheme
                                   .bodySmall

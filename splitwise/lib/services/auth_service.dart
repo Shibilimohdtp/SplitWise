@@ -3,11 +3,13 @@ import 'package:firebase_auth/firebase_auth.dart' as auth;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:splitwise/models/user.dart';
+import 'package:splitwise/services/group_service.dart';
 
 class AuthService with ChangeNotifier {
   final auth.FirebaseAuth _auth = auth.FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final GroupService _groupService = GroupService();
 
   User? _userFromFirebaseUser(auth.User? user) {
     if (user == null) return null;
@@ -39,6 +41,8 @@ class AuthService with ChangeNotifier {
           'username': username,
           'email': email,
         });
+
+        await _groupService.convertInvitedUser(firebaseUser.uid, email);
 
         User newUser = User(
           uid: firebaseUser.uid,
@@ -170,6 +174,8 @@ class AuthService with ChangeNotifier {
             'email': email,
             'profileImageUrl': firebaseUser.photoURL,
           });
+
+          await _groupService.convertInvitedUser(firebaseUser.uid, email);
 
           User newUser = User(
             uid: firebaseUser.uid,

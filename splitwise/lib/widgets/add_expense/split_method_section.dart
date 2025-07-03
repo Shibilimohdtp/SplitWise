@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:splitwise/models/group.dart';
 import 'package:splitwise/services/user_service.dart';
-import 'package:splitwise/utils/app_color.dart';
 import 'package:splitwise/widgets/form/section_card.dart';
 import 'package:splitwise/widgets/form/section_header.dart';
 
@@ -18,8 +17,6 @@ class SplitMethodSection extends StatelessWidget {
   final Function(String, double) onCustomSplitChanged;
   final Function(String, double) onPercentageSplitChanged;
   final Function(String, int) onShareSplitChanged;
-
-  // Get the total amount from the parent widget
   final double? totalAmount;
 
   const SplitMethodSection({
@@ -52,11 +49,11 @@ class SplitMethodSection extends StatelessWidget {
           const SizedBox(height: 12),
           _buildSplitMethodSelector(context),
           if (splitMethod != 'Equal') ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: 20),
             Text(
               'Split Details',
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w500,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
                   ),
             ),
             const SizedBox(height: 8),
@@ -81,7 +78,6 @@ class SplitMethodSection extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: splitMethods.map((method) {
               final isSelected = splitMethod == method;
-
               return GestureDetector(
                 onTap: () => onSplitMethodChanged(method),
                 child: Container(
@@ -153,195 +149,276 @@ class SplitMethodSection extends StatelessWidget {
   }
 
   Widget _buildSplitInputs(BuildContext context) {
+    final allMembers = [...group.memberIds, ...group.invitedEmails];
+    final activeParticipants =
+        allMembers.where((member) => participants[member] ?? false).toList();
+
+    return Column(
+      children: activeParticipants
+          .map((member) => _buildParticipantCard(context, member))
+          .toList(),
+    );
+  }
+
+  Widget _buildParticipantCard(BuildContext context, String memberIdentifier) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildParticipantHeader(context, memberIdentifier),
+          const SizedBox(height: 12),
+          _buildInputField(context, memberIdentifier),
+          _buildCalculationHelper(context, memberIdentifier),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildParticipantHeader(
+      BuildContext context, String memberIdentifier) {
+    final isInvited = group.invitedEmails.contains(memberIdentifier);
+    return FutureBuilder<String>(
+      future: isInvited
+          ? Future.value(memberIdentifier)
+          : userService.getUserName(memberIdentifier),
+      builder: (context, snapshot) {
+        final userName = snapshot.data ?? 'Loading...';
+        return Row(
+          children: [
+            // You can add a user avatar here if available
+            const Icon(Icons.person_outline, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                userName,
+                style: Theme.of(context).textTheme.titleMedium,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            Text(
+              _getCurrentValueDisplay(memberIdentifier),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildInputField(BuildContext context, String memberIdentifier) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.primaryContainer,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            _getInputIcon(),
+            size: 18,
+            color: Theme.of(context).colorScheme.onPrimaryContainer,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: TextFormField(
+            initialValue: _getInitialValue(memberIdentifier),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: Theme.of(context)
+                  .colorScheme
+                  .surfaceContainerHighest
+                  .withValues(alpha: 0.3),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.primary,
+                  width: 2,
+                ),
+              ),
+              isDense: true,
+              contentPadding: const EdgeInsets.all(12),
+              prefixText: splitMethod == 'Exact' ? '\$ ' : null,
+              suffixText: splitMethod == 'Percentage' ? ' %' : null,
+              hintText: _getHintText(),
+            ),
+            onChanged: (value) => _onInputChanged(memberIdentifier, value),
+          ),
+        ),
+        if (_isValid(memberIdentifier))
+          Container(
+            margin: const EdgeInsets.only(left: 8),
+            child: Icon(
+              Icons.check_circle,
+              color: Theme.of(context).colorScheme.primary,
+              size: 20,
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildCalculationHelper(
+      BuildContext context, String memberIdentifier) {
+    final helperText = _getHelperText(memberIdentifier);
+    if (helperText.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Theme.of(context)
+            .colorScheme
+            .secondaryContainer
+            .withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.info_outline,
+            size: 14,
+            color: Theme.of(context).colorScheme.onSecondaryContainer,
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              helperText,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSecondaryContainer,
+                  ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getInitialValue(String memberIdentifier) {
     switch (splitMethod) {
       case 'Exact':
-        return _buildExactSplitInputs(context);
+        return customSplitAmounts[memberIdentifier]?.toString() ?? '';
       case 'Percentage':
-        return _buildPercentageSplitInputs(context);
+        return percentageSplits[memberIdentifier]?.toString() ?? '';
       case 'Shares':
-        return _buildShareSplitInputs(context);
+        return shareSplits[memberIdentifier]?.toString() ?? '1';
       default:
-        return const SizedBox.shrink();
+        return '';
     }
   }
 
-  Widget _buildExactSplitInputs(BuildContext context) {
-    return Column(
-      children: group.members.map((memberId) {
-        if (participants[memberId] ?? false) {
-          return FutureBuilder<String>(
-            future: userService.getUserName(memberId),
-            builder: (context, snapshot) {
-              final userName = snapshot.data ?? 'Loading...';
-              return Container(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                decoration: const BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(color: AppColors.borderLight),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        userName,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: AppColors.textMain,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    SizedBox(
-                      width: 120,
-                      child: TextFormField(
-                        initialValue:
-                            customSplitAmounts[memberId]?.toString() ?? '',
-                        keyboardType: TextInputType.number,
-                        decoration: InputDecoration(
-                          isDense: true,
-                          contentPadding: const EdgeInsets.all(12),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide:
-                                const BorderSide(color: AppColors.borderLight),
-                          ),
-                          prefixText: '\$',
-                        ),
-                        onChanged: (value) {
-                          onCustomSplitChanged(
-                              memberId, double.tryParse(value) ?? 0);
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          );
-        }
-        return const SizedBox.shrink();
-      }).toList(),
-    );
+  String _getHintText() {
+    switch (splitMethod) {
+      case 'Exact':
+        return '0.00';
+      case 'Percentage':
+        return '0';
+      case 'Shares':
+        return '1';
+      default:
+        return '';
+    }
   }
 
-  Widget _buildPercentageSplitInputs(BuildContext context) {
-    return Column(
-      children: group.members.map((memberId) {
-        if (participants[memberId] ?? false) {
-          return FutureBuilder<String>(
-            future: userService.getUserName(memberId),
-            builder: (context, snapshot) {
-              final userName = snapshot.data ?? 'Loading...';
-              return Container(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                decoration: const BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(color: AppColors.borderLight),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        userName,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: AppColors.textMain,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    SizedBox(
-                      width: 120,
-                      child: TextFormField(
-                        initialValue:
-                            percentageSplits[memberId]?.toString() ?? '',
-                        keyboardType: TextInputType.number,
-                        decoration: InputDecoration(
-                          isDense: true,
-                          contentPadding: const EdgeInsets.all(12),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide:
-                                const BorderSide(color: AppColors.borderLight),
-                          ),
-                          suffixText: '%',
-                        ),
-                        onChanged: (value) {
-                          onPercentageSplitChanged(
-                              memberId, double.tryParse(value) ?? 0);
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          );
-        }
-        return const SizedBox.shrink();
-      }).toList(),
-    );
+  void _onInputChanged(String memberIdentifier, String value) {
+    switch (splitMethod) {
+      case 'Exact':
+        onCustomSplitChanged(memberIdentifier, double.tryParse(value) ?? 0);
+        break;
+      case 'Percentage':
+        onPercentageSplitChanged(memberIdentifier, double.tryParse(value) ?? 0);
+        break;
+      case 'Shares':
+        onShareSplitChanged(memberIdentifier, int.tryParse(value) ?? 1);
+        break;
+    }
   }
 
-  Widget _buildShareSplitInputs(BuildContext context) {
-    return Column(
-      children: group.members.map((memberId) {
-        if (participants[memberId] ?? false) {
-          return FutureBuilder<String>(
-            future: userService.getUserName(memberId),
-            builder: (context, snapshot) {
-              final userName = snapshot.data ?? 'Loading...';
-              return Container(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                decoration: const BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(color: AppColors.borderLight),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        userName,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: AppColors.textMain,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    SizedBox(
-                      width: 120,
-                      child: TextFormField(
-                        initialValue: shareSplits[memberId]?.toString() ?? '1',
-                        keyboardType: TextInputType.number,
-                        decoration: InputDecoration(
-                          isDense: true,
-                          contentPadding: const EdgeInsets.all(12),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide:
-                                const BorderSide(color: AppColors.borderLight),
-                          ),
-                          hintText: '1',
-                        ),
-                        onChanged: (value) {
-                          onShareSplitChanged(
-                              memberId, int.tryParse(value) ?? 1);
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          );
-        }
-        return const SizedBox.shrink();
-      }).toList(),
-    );
+  bool _isValid(String memberIdentifier) {
+    // Basic validation, can be expanded
+    switch (splitMethod) {
+      case 'Exact':
+        return (customSplitAmounts[memberIdentifier] ?? 0) > 0;
+      case 'Percentage':
+        return (percentageSplits[memberIdentifier] ?? 0) > 0;
+      case 'Shares':
+        return (shareSplits[memberIdentifier] ?? 0) > 0;
+      default:
+        return false;
+    }
+  }
+
+  String _getCurrentValueDisplay(String memberIdentifier) {
+    if (totalAmount == null || totalAmount! <= 0) return '';
+
+    switch (splitMethod) {
+      case 'Exact':
+        final amount = customSplitAmounts[memberIdentifier] ?? 0;
+        return '\$${amount.toStringAsFixed(2)}';
+      case 'Percentage':
+        final percentage = percentageSplits[memberIdentifier] ?? 0;
+        final amount = (totalAmount! * percentage) / 100;
+        return '\$${amount.toStringAsFixed(2)}';
+      case 'Shares':
+        final totalShares =
+            shareSplits.values.where((s) => s > 0).fold(0, (p, c) => p + c);
+        if (totalShares == 0) return '\$0.00';
+        final userShares = shareSplits[memberIdentifier] ?? 0;
+        final amount = (totalAmount! * userShares) / totalShares;
+        return '\$${amount.toStringAsFixed(2)}';
+      default:
+        return '';
+    }
+  }
+
+  String _getHelperText(String memberIdentifier) {
+    if (totalAmount == null || totalAmount! <= 0) {
+      return 'Enter total amount to see split calculations.';
+    }
+
+    switch (splitMethod) {
+      case 'Exact':
+        final totalAllocated =
+            customSplitAmounts.values.fold(0.0, (p, c) => p + c);
+        final remaining = totalAmount! - totalAllocated;
+        return 'Remaining: \$${remaining.toStringAsFixed(2)}';
+      case 'Percentage':
+        final totalPercentage =
+            percentageSplits.values.fold(0.0, (p, c) => p + c);
+        final remaining = 100 - totalPercentage;
+        return 'Remaining: ${remaining.toStringAsFixed(1)}%';
+      case 'Shares':
+        final totalShares =
+            shareSplits.values.where((s) => s > 0).fold(0, (p, c) => p + c);
+        return 'Total shares: $totalShares';
+      default:
+        return '';
+    }
   }
 
   IconData _getSplitMethodIcon(String method) {
@@ -359,14 +436,27 @@ class SplitMethodSection extends StatelessWidget {
     }
   }
 
+  IconData _getInputIcon() {
+    switch (splitMethod) {
+      case 'Exact':
+        return Icons.money;
+      case 'Percentage':
+        return Icons.percent_outlined;
+      case 'Shares':
+        return Icons.pie_chart_outline;
+      default:
+        return Icons.money;
+    }
+  }
+
   String _getSplitMethodDescription(String method) {
     switch (method) {
       case 'Exact':
-        return 'Specify the exact amount each person pays';
+        return 'Specify the exact amount each person pays.';
       case 'Percentage':
-        return 'Split by percentage of the total';
+        return 'Split by percentage of the total amount.';
       case 'Shares':
-        return 'Split by shares (e.g., 1 share each or custom ratio)';
+        return 'Split by shares (e.g., 2 shares for one, 1 for another).';
       default:
         return '';
     }
@@ -377,11 +467,10 @@ class SplitMethodSection extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
+    bool isValid = true;
+    String message = '';
     double totalAllocated = 0;
-    double totalPercentage = 0;
-    int totalShares = 0;
 
-    // Calculate totals based on split method
     final activeParticipants = participants.entries
         .where((entry) => entry.value)
         .map((entry) => entry.key)
@@ -393,70 +482,29 @@ class SplitMethodSection extends StatelessWidget {
           0,
           (sum, uid) => sum + (customSplitAmounts[uid] ?? 0),
         );
+        final difference = (totalAmount! - totalAllocated).abs();
+        isValid = difference < 0.01;
+        message =
+            'Total: \$${totalAllocated.toStringAsFixed(2)} of \$${totalAmount!.toStringAsFixed(2)}';
         break;
 
       case 'Percentage':
-        totalPercentage = activeParticipants.fold<double>(
+        final totalPercentage = activeParticipants.fold<double>(
           0,
           (sum, uid) => sum + (percentageSplits[uid] ?? 0),
         );
+        isValid = (totalPercentage - 100).abs() < 0.01;
+        message = 'Total: ${totalPercentage.toStringAsFixed(1)}% of 100%';
         break;
 
       case 'Shares':
-        totalShares = activeParticipants.fold<int>(
+        final totalShares = activeParticipants.fold<int>(
           0,
           (sum, uid) => sum + (shareSplits[uid] ?? 1),
         );
+        isValid = totalShares > 0;
+        message = 'Total shares: $totalShares';
         break;
-    }
-
-    // Build the summary widget based on split method
-    bool isValid = true;
-    String message = '';
-
-    switch (splitMethod) {
-      case 'Exact':
-        final difference = (totalAmount! - totalAllocated).abs();
-        isValid = difference < 0.01; // Allow small rounding errors
-
-        if (totalAllocated == 0) {
-          message = 'Please specify amounts';
-        } else if (!isValid) {
-          message = totalAllocated > totalAmount!
-              ? 'Total exceeds expense amount by ${(totalAllocated - totalAmount!).toStringAsFixed(2)}'
-              : 'Total is short by ${(totalAmount! - totalAllocated).toStringAsFixed(2)}';
-        } else {
-          message = 'Total: ${totalAmount!.toStringAsFixed(2)}';
-        }
-        break;
-
-      case 'Percentage':
-        isValid =
-            (totalPercentage - 100).abs() < 0.01; // Allow small rounding errors
-
-        if (totalPercentage == 0) {
-          message = 'Please specify percentages';
-        } else if (!isValid) {
-          message = totalPercentage > 100
-              ? 'Total exceeds 100% by ${(totalPercentage - 100).toStringAsFixed(1)}%'
-              : 'Total is short by ${(100 - totalPercentage).toStringAsFixed(1)}%';
-        } else {
-          message = 'Total: 100%';
-        }
-        break;
-
-      case 'Shares':
-        if (totalShares == 0) {
-          isValid = false;
-          message = 'Please specify shares';
-        } else {
-          message = 'Total: $totalShares shares';
-          isValid = true;
-        }
-        break;
-
-      default:
-        return const SizedBox.shrink();
     }
 
     return Container(

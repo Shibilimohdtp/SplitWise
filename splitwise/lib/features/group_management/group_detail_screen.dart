@@ -55,10 +55,16 @@ class GroupDetailScreenState extends State<GroupDetailScreen>
 
   Future<void> _loadMembers() async {
     try {
-      final members = await _userService.getGroupMembers(widget.group.members);
+      final memberUsers =
+          await _userService.getGroupMembers(widget.group.memberIds);
+
+      final invitedUsers = widget.group.invitedEmails.map((email) {
+        return User(uid: '', name: 'Invited', username: email, email: email);
+      }).toList();
+
       if (mounted) {
         setState(() {
-          _members = members;
+          _members = [...memberUsers, ...invitedUsers];
           _isLoadingMembers = false;
         });
       }

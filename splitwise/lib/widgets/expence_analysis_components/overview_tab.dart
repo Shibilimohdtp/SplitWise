@@ -63,7 +63,10 @@ class OverviewTab extends StatelessWidget {
   }
 
   Widget _buildTotalExpensesCard(
-      BuildContext context, ColorScheme colorScheme, TextTheme textTheme) {
+    BuildContext context,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+  ) {
     return AnalysisCard(
       title: 'Total Expenses',
       iconData: Icons.account_balance_wallet_outlined,
@@ -81,27 +84,48 @@ class OverviewTab extends StatelessWidget {
             curve: Curves.easeOutCubic,
             builder: (context, value, child) {
               return Container(
-                padding: const EdgeInsets.symmetric(
-                    vertical: 12, horizontal: kPadding),
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
                 decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(12),
+                  color: colorScheme.surfaceContainerHighest
+                      .withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                      color: colorScheme.primary.withValues(alpha: 0.1)),
+                    color: colorScheme.outline.withValues(alpha: 0.08),
+                  ),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(settingsService.currency,
-                        style: textTheme.titleMedium?.copyWith(
+                    Text(
+                      'Total Spent',
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          settingsService.currency,
+                          style: textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w500,
-                            color: colorScheme.primary)),
-                    const SizedBox(width: 4),
-                    Text(NumberFormat('#,##0.00').format(value),
-                        style: textTheme.headlineMedium?.copyWith(
+                            color: colorScheme.primary,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          NumberFormat('#,##0.00').format(value),
+                          style: textTheme.headlineMedium?.copyWith(
                             fontWeight: FontWeight.bold,
-                            color: colorScheme.primary)),
+                            color: colorScheme.primary,
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               );

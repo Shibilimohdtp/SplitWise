@@ -319,9 +319,6 @@ class HomeDrawer extends StatelessWidget {
 
   // Separate method to handle sign out logic
   Future<void> _handleSignOut(BuildContext context) async {
-    // Store a local reference to the navigator before the async gap
-    final navigator = Navigator.of(context);
     await authService.signOut();
-    navigator.pop(); // Close the drawer
   }
 }

@@ -100,23 +100,32 @@ class BalancesTab extends StatelessWidget {
       child: InkWell(
         onTap: () async {
           // Show a dialog with more details if needed
-          final userName = await userService.getUserName(entry.key);
+          final isInvited = !await userService.isUser(entry.key);
+          final userName =
+              isInvited ? entry.key : await userService.getUserName(entry.key);
           if (!context.mounted) return;
 
           showDialog(
             context: context,
             builder: (context) => AlertDialog(
-              title: const Text('Balance Details'),
+              title: Text(
+                'Balance Details',
+                style:
+                    textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   FutureBuilder<String?>(
-                    future: userService.getProfileImageUrl(entry.key),
+                    future: isInvited
+                        ? Future.value(null)
+                        : userService.getProfileImageUrl(entry.key),
                     builder: (context, imageSnapshot) {
                       return UserAvatar(
                         userName: userName,
                         profileImageUrl: imageSnapshot.data,
-                        radius: 30,
+                        radius: 36,
                         backgroundColor: bgColor,
                         foregroundColor: valueColor,
                       );
@@ -125,7 +134,7 @@ class BalancesTab extends StatelessWidget {
                   const SizedBox(height: 16),
                   Text(
                     userName,
-                    style: textTheme.titleLarge?.copyWith(
+                    style: textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                     textAlign: TextAlign.center,
@@ -167,7 +176,10 @@ class BalancesTab extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     FutureBuilder<Map<String, dynamic>>(
-                      future: userService.getUserNameAndImage(entry.key),
+                      future: userService.isUser(entry.key).then((isUser) =>
+                          isUser
+                              ? userService.getUserNameAndImage(entry.key)
+                              : {'name': entry.key, 'profileImageUrl': null}),
                       builder: (context, snapshot) {
                         final userName = snapshot.data?['name'] ?? '?';
                         final profileImageUrl =
@@ -183,10 +195,13 @@ class BalancesTab extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Flexible(
-                      child: FutureBuilder<Map<String, dynamic>>(
-                        future: userService.getUserNameAndImage(entry.key),
+                      child: FutureBuilder<String>(
+                        future: userService.isUser(entry.key).then((isUser) =>
+                            isUser
+                                ? userService.getUserName(entry.key)
+                                : entry.key),
                         builder: (context, snapshot) => Text(
-                          snapshot.data?['name'] ?? '...',
+                          snapshot.data ?? '...',
                           style: textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w500,
                           ),

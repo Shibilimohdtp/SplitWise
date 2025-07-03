@@ -26,7 +26,9 @@ class GroupService {
         name: name,
         description: description,
         creatorId: creatorId,
-        members: [creatorId], // Ensure the creator is added to the members list
+        memberIds: [
+          creatorId
+        ], // Ensure the creator is added to the members list
       );
 
       final bool hasConnection =
@@ -62,7 +64,7 @@ class GroupService {
   Stream<List<Group>> getUserGroups(String userId) {
     return _firestore
         .collection('groups')
-        .where('members', arrayContains: userId)
+        .where('memberIds', arrayContains: userId)
         .snapshots()
         .map((snapshot) =>
             snapshot.docs.map((doc) => Group.fromFirestore(doc)).toList());
@@ -77,28 +79,30 @@ class GroupService {
           .get();
 
       if (userQuery.docs.isEmpty) {
-        throw Exception(
-            'User with email $email not found. Make sure they have registered.');
+        // User not found, add to invitedEmails
+        await _firestore.collection('groups').doc(groupId).update({
+          'invitedEmails': FieldValue.arrayUnion([email]),
+        });
+      } else {
+        // User found, add to memberIds
+        final userId = userQuery.docs.first.id;
+        await _firestore.collection('groups').doc(groupId).update({
+          'memberIds': FieldValue.arrayUnion([userId]),
+        });
+
+        // Get the group details
+        final groupDoc =
+            await _firestore.collection('groups').doc(groupId).get();
+        final groupName = groupDoc.data()?['name'] ?? 'Unknown Group';
+
+        // Send a notification to the invited user
+        await _notificationService.sendNotification(
+          userId,
+          'Group Invitation',
+          'You have been invited to join $groupName',
+          groupId: groupId,
+        );
       }
-
-      final userId = userQuery.docs.first.id;
-
-      // Add the user to the group's members list
-      await _firestore.collection('groups').doc(groupId).update({
-        'members': FieldValue.arrayUnion([userId]),
-      });
-
-      // Get the group details
-      final groupDoc = await _firestore.collection('groups').doc(groupId).get();
-      final groupName = groupDoc.data()?['name'] ?? 'Unknown Group';
-
-      // Send a notification to the invited user
-      await _notificationService.sendNotification(
-        userId,
-        'Group Invitation',
-        'You have been invited to join $groupName',
-        groupId: groupId,
-      );
     } catch (e) {
       if (kDebugMode) {
         print('Error in inviteMember: $e');
@@ -107,9 +111,23 @@ class GroupService {
     }
   }
 
+  Future<void> convertInvitedUser(String userId, String email) async {
+    final groupsQuery = await _firestore
+        .collection('groups')
+        .where('invitedEmails', arrayContains: email)
+        .get();
+
+    for (final groupDoc in groupsQuery.docs) {
+      await groupDoc.reference.update({
+        'memberIds': FieldValue.arrayUnion([userId]),
+        'invitedEmails': FieldValue.arrayRemove([email]),
+      });
+    }
+  }
+
   Future<void> addMember(String groupId, String userId) async {
     await _firestore.collection('groups').doc(groupId).update({
-      'members': FieldValue.arrayUnion([userId]),
+      'memberIds': FieldValue.arrayUnion([userId]),
     });
   }
 
@@ -131,7 +149,7 @@ class GroupService {
 
   Future<void> removeMember(String groupId, String userId) async {
     await _firestore.collection('groups').doc(groupId).update({
-      'members': FieldValue.arrayRemove([userId]),
+      'memberIds': FieldValue.arrayRemove([userId]),
     });
 
     // Remove the user from all expense split details in this group

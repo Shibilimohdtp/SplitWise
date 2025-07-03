@@ -12,6 +12,7 @@ import 'package:splitwise/widgets/add_expense/participants_section.dart';
 import 'package:splitwise/widgets/add_expense/split_method_section.dart';
 import 'package:splitwise/widgets/add_expense/additional_details_section.dart';
 import 'package:splitwise/widgets/add_expense/expense_confirmation_bottom_sheet.dart';
+import 'package:splitwise/widgets/add_expense/payer_selection_section.dart';
 import 'package:splitwise/widgets/common/action_bottom_bar.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -37,6 +38,7 @@ class AddExpenseScreenState extends State<AddExpenseScreen> {
   final _commentController = TextEditingController();
 
   // State variables
+  String? _selectedPayerId;
   String _category = 'Uncategorized';
   String _splitMethod = 'Equal';
   final Map<String, bool> _participants = {};
@@ -63,17 +65,25 @@ class AddExpenseScreenState extends State<AddExpenseScreen> {
   @override
   void initState() {
     super.initState();
+    final authService = Provider.of<AuthService>(context, listen: false);
     final settingsService =
         Provider.of<SettingsService>(context, listen: false);
     _expenseService = ExpenseService(settingsService);
     _userService = UserService();
+    _selectedPayerId = authService.currentUser!.uid;
 
     // Initialize participants map for all group members
-    for (var memberId in widget.group.members) {
+    for (var memberId in widget.group.memberIds) {
       _participants[memberId] = true;
       _customSplitAmounts[memberId] = 0;
       _percentageSplits[memberId] = 0;
       _shareSplits[memberId] = 1;
+    }
+    for (var email in widget.group.invitedEmails) {
+      _participants[email] = true;
+      _customSplitAmounts[email] = 0;
+      _percentageSplits[email] = 0;
+      _shareSplits[email] = 1;
     }
 
     // Add listener to amount controller to update the UI when amount changes
@@ -132,6 +142,17 @@ class AddExpenseScreenState extends State<AddExpenseScreen> {
               categories: _categories,
             ),
             const SizedBox(height: 12),
+            PayerSelectionSection(
+              group: widget.group,
+              userService: _userService,
+              selectedPayerId: _selectedPayerId,
+              onPayerSelected: (payerId) {
+                setState(() {
+                  _selectedPayerId = payerId;
+                });
+              },
+            ),
+            const SizedBox(height: 12),
             ParticipantsSection(
               group: widget.group,
               userService: _userService,
@@ -143,14 +164,14 @@ class AddExpenseScreenState extends State<AddExpenseScreen> {
               },
               onSelectAll: () {
                 setState(() {
-                  for (var memberId in widget.group.members) {
+                  for (var memberId in widget.group.memberIds) {
                     _participants[memberId] = true;
                   }
                 });
               },
               onClearAll: () {
                 setState(() {
-                  for (var memberId in widget.group.members) {
+                  for (var memberId in widget.group.memberIds) {
                     _participants[memberId] = false;
                   }
                 });
@@ -465,7 +486,7 @@ class AddExpenseScreenState extends State<AddExpenseScreen> {
       }
 
       // Prepare the expense data
-      final authService = Provider.of<AuthService>(context, listen: false);
+      // final authService = Provider.of<AuthService>(context, listen: false);
       final settingsService =
           Provider.of<SettingsService>(context, listen: false);
       final splitDetails = _calculateSplitDetails();
@@ -486,7 +507,7 @@ class AddExpenseScreenState extends State<AddExpenseScreen> {
       final expense = Expense(
         id: '',
         groupId: widget.group.id,
-        payerId: authService.currentUser!.uid,
+        payerId: _selectedPayerId!,
         amount: amount,
         currency: settingsService.currency,
         description: _descriptionController.text,

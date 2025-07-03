@@ -228,7 +228,7 @@ class ExpenseListState extends State<ExpenseList> {
           children: [
             if (showDateHeader) _buildDateHeader(expenseDate),
             FutureBuilder<String>(
-              future: userService.getUserName(expense.payerId),
+              future: _getPayerName(userService, expense.payerId),
               builder: (context, creatorSnapshot) {
                 if (creatorSnapshot.connectionState ==
                     ConnectionState.waiting) {
@@ -450,6 +450,14 @@ class ExpenseListState extends State<ExpenseList> {
         ],
       ),
     );
+  }
+
+  Future<String> _getPayerName(UserService userService, String payerId) async {
+    final isUser = await userService.isUser(payerId);
+    if (isUser) {
+      return userService.getUserName(payerId);
+    }
+    return payerId;
   }
 
   void _showExpenseDetails(

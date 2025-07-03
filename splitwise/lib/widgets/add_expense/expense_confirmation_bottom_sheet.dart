@@ -359,7 +359,10 @@ class _ExpenseConfirmationBottomSheetState
     for (int i = 0; i < entries.length; i++) {
       final entry = entries[i];
       final isLastItem = i == entries.length - 1;
-      final userName = await widget.userService.getUserName(entry.key);
+      final isInvited = widget.group.invitedEmails.contains(entry.key);
+      final userName = isInvited
+          ? entry.key
+          : await widget.userService.getUserName(entry.key);
 
       widgets.add(
         Container(

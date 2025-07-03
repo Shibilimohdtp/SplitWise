@@ -166,7 +166,7 @@ class SettlementsTabState extends State<SettlementsTab> {
             ]),
             const SizedBox(height: 12),
             _buildInstructionStep(textTheme, colorScheme, '1.',
-                'Follow the payment directions below (tap for details)'),
+                'Follow the payment directions above (tap for details)'),
             const SizedBox(height: 4),
             _buildInstructionStep(textTheme, colorScheme, '2.',
                 'Mark settlements as complete once paid'),
@@ -253,7 +253,9 @@ class SettlementsTabState extends State<SettlementsTab> {
         // Conditionally add avatar before/after name based on isDebtor
         if (isDebtor) ...[
           FutureBuilder<Map<String, dynamic>>(
-            future: widget.userService.getUserNameAndImage(userId),
+            future: widget.userService.isUser(userId).then((isUser) => isUser
+                ? widget.userService.getUserNameAndImage(userId)
+                : {'name': userId, 'profileImageUrl': null}),
             builder: (context, snapshot) {
               final userName = snapshot.data?['name'] ?? '?';
               final profileImageUrl = snapshot.data?['profileImageUrl'];
@@ -271,10 +273,11 @@ class SettlementsTabState extends State<SettlementsTab> {
           const SizedBox(width: 6),
         ],
         Flexible(
-          child: FutureBuilder<Map<String, dynamic>>(
-            future: widget.userService.getUserNameAndImage(userId),
+          child: FutureBuilder<String>(
+            future: widget.userService.isUser(userId).then((isUser) =>
+                isUser ? widget.userService.getUserName(userId) : userId),
             builder: (context, snapshot) => Text(
-              snapshot.data?['name'] ?? '...',
+              snapshot.data ?? '...',
               style: textTheme.bodySmall?.copyWith(
                   fontWeight: FontWeight.w500, color: colorScheme.onSurface),
               overflow: TextOverflow.ellipsis,
@@ -285,7 +288,9 @@ class SettlementsTabState extends State<SettlementsTab> {
         if (!isDebtor) ...[
           const SizedBox(width: 6),
           FutureBuilder<Map<String, dynamic>>(
-            future: widget.userService.getUserNameAndImage(userId),
+            future: widget.userService.isUser(userId).then((isUser) => isUser
+                ? widget.userService.getUserNameAndImage(userId)
+                : {'name': userId, 'profileImageUrl': null}),
             builder: (context, snapshot) {
               final userName = snapshot.data?['name'] ?? '?';
               final profileImageUrl = snapshot.data?['profileImageUrl'];
@@ -338,68 +343,107 @@ class SettlementsTabState extends State<SettlementsTab> {
   }
 
   void _showSettlementDetailsDialog(
-      Settlement settlement, ColorScheme colorScheme, TextTheme textTheme) {
-    // Track loading state
+    Settlement settlement,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+  ) {
     bool isProcessing = false;
 
     showDialog(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          title: const Text('Settlement Details'),
-          content: Column(mainAxisSize: MainAxisSize.min, children: [
-            Text('To settle the balance:',
-                style: textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w500,
-                    color: colorScheme.onSurfaceVariant)),
-            const SizedBox(height: kPadding),
-            FutureBuilder<List<String>>(
-              // Fetch both names
-              future: Future.wait([
-                widget.userService.getUserName(settlement.from),
-                widget.userService.getUserName(settlement.to)
-              ]),
-              builder: (context, namesSnapshot) {
-                final fromName = namesSnapshot.data?[0] ?? '...';
-                final toName = namesSnapshot.data?[1] ?? '...';
-                return Text('$fromName needs to pay $toName',
-                    textAlign: TextAlign.center,
-                    style: textTheme.titleMedium
-                        ?.copyWith(fontWeight: FontWeight.w600));
-              },
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
+          contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+          actionsPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          title: Text(
+            'Settlement Details',
+            style: textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
             ),
-            const SizedBox(height: 8),
-            Text(
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'To settle the balance:',
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 16),
+              FutureBuilder<List<String>>(
+                future: Future.wait([
+                  widget.userService.isUser(settlement.from).then((isUser) =>
+                      isUser
+                          ? widget.userService.getUserName(settlement.from)
+                          : settlement.from),
+                  widget.userService.isUser(settlement.to).then((isUser) =>
+                      isUser
+                          ? widget.userService.getUserName(settlement.to)
+                          : settlement.to),
+                ]),
+                builder: (context, snapshot) {
+                  final fromName = snapshot.data?[0] ?? '...';
+                  final toName = snapshot.data?[1] ?? '...';
+                  return Column(
+                    children: [
+                      Text(
+                        '$fromName needs to pay $toName',
+                        textAlign: TextAlign.center,
+                        style: textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                  );
+                },
+              ),
+              Text(
                 '${widget.settingsService.currency}${settlement.amount.toStringAsFixed(2)}',
-                style: textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w700, color: colorScheme.primary)),
-            const SizedBox(height: kPadding),
-            Text('Once paid, mark this settlement as complete.',
                 textAlign: TextAlign.center,
-                style: textTheme.bodySmall
-                    ?.copyWith(color: colorScheme.onSurfaceVariant)),
-          ]),
+                style: textTheme.headlineSmall?.copyWith(
+                  color: colorScheme.primary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Once the payment is made, tap below to mark it as complete.',
+                textAlign: TextAlign.center,
+                style: textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
           actions: [
             TextButton(
-                onPressed: isProcessing
-                    ? null // Disable when processing
-                    : () => Navigator.of(dialogContext).pop(),
-                child: const Text('Close')),
-            FilledButton.tonal(
+              onPressed:
+                  isProcessing ? null : () => Navigator.of(dialogContext).pop(),
+              child: const Text('Close'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
               onPressed: isProcessing
-                  ? null // Disable when processing
+                  ? null
                   : () async {
-                      // Update loading state
-                      setState(() {
-                        isProcessing = true;
-                      });
-
-                      // Store context references before async operations
+                      setState(() => isProcessing = true);
                       final scaffoldMessengerState =
                           ScaffoldMessenger.of(context);
 
                       try {
-                        // Call the service to mark as settled
                         final result =
                             await widget.expenseService.markSettlementAsSettled(
                           widget.group.id,
@@ -408,15 +452,11 @@ class SettlementsTabState extends State<SettlementsTab> {
                           settlement.amount,
                         );
 
-                        // After async operation, check if still mounted before using context
                         if (!mounted) return;
-
-                        // Close the dialog
                         if (dialogContext.mounted) {
                           Navigator.of(dialogContext).pop();
                         }
 
-                        // Show success message
                         if (result != null) {
                           scaffoldMessengerState.showSnackBar(
                             SnackBar(
@@ -425,7 +465,9 @@ class SettlementsTabState extends State<SettlementsTab> {
                                   Icon(Icons.check_circle,
                                       color: colorScheme.onPrimary),
                                   const SizedBox(width: 12),
-                                  const Text('Settlement marked as complete!'),
+                                  const Expanded(
+                                      child: Text(
+                                          'Settlement marked as complete!')),
                                 ],
                               ),
                               backgroundColor: colorScheme.primary,
@@ -433,13 +475,8 @@ class SettlementsTabState extends State<SettlementsTab> {
                               duration: const Duration(seconds: 3),
                             ),
                           );
-
-                          // Refresh the screen to update balances
-                          setState(() {});
-                          // Force refresh of the parent state to update balances
                           widget.onSettlementCompleted();
                         } else {
-                          // Show error message
                           scaffoldMessengerState.showSnackBar(
                             SnackBar(
                               content: Row(
@@ -447,8 +484,9 @@ class SettlementsTabState extends State<SettlementsTab> {
                                   Icon(Icons.error_outline,
                                       color: colorScheme.onError),
                                   const SizedBox(width: 12),
-                                  const Text(
-                                      'Failed to mark settlement as complete'),
+                                  const Expanded(
+                                      child: Text(
+                                          'Failed to mark settlement as complete')),
                                 ],
                               ),
                               backgroundColor: colorScheme.error,
@@ -457,10 +495,7 @@ class SettlementsTabState extends State<SettlementsTab> {
                           );
                         }
                       } catch (e) {
-                        // After async operation, check if still mounted before using context
                         if (!mounted) return;
-
-                        // Handle errors
                         if (dialogContext.mounted) {
                           Navigator.of(dialogContext).pop();
                         }
@@ -472,7 +507,7 @@ class SettlementsTabState extends State<SettlementsTab> {
                                 Icon(Icons.error_outline,
                                     color: colorScheme.onError),
                                 const SizedBox(width: 12),
-                                Text('Error: ${e.toString()}'),
+                                Expanded(child: Text('Error: ${e.toString()}')),
                               ],
                             ),
                             backgroundColor: colorScheme.error,
@@ -480,29 +515,20 @@ class SettlementsTabState extends State<SettlementsTab> {
                           ),
                         );
                       } finally {
-                        // Reset loading state if dialog is still open
-                        if (mounted) {
-                          setState(() {
-                            isProcessing = false;
-                          });
-                        }
+                        if (mounted) setState(() => isProcessing = false);
                       }
                     },
               child: isProcessing
-                  ? Row(
+                  ? const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         SizedBox(
                           width: 16,
                           height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                                colorScheme.primary),
-                          ),
+                          child: CircularProgressIndicator(strokeWidth: 2),
                         ),
-                        const SizedBox(width: 8),
-                        const Text('Processing...'),
+                        SizedBox(width: 8),
+                        Text('Processing...'),
                       ],
                     )
                   : const Text('Mark as Settled'),
