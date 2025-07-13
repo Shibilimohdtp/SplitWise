@@ -28,107 +28,91 @@ class ActionBottomBar extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    // Default decoration if none provided
+    // Enhanced default decoration matching new design style
     final effectiveDecoration = decoration ??
         BoxDecoration(
           color: colorScheme.surface,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+          border: Border.all(
+            color: colorScheme.outline.withValues(alpha: 0.3),
+            width: 1,
+          ),
           boxShadow: [
             BoxShadow(
-              color: colorScheme.shadow.withValues(alpha: 0.05),
-              blurRadius: 8,
+              color: colorScheme.shadow.withValues(alpha: 0.1),
+              blurRadius: 10,
               offset: const Offset(0, -2),
             ),
           ],
-          border: Border(
-            top: BorderSide(color: colorScheme.outline.withValues(alpha: 0.1)),
-          ),
         );
 
-    // Default padding if none provided
-    final effectivePadding =
-        padding ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 12);
+    // Enhanced default padding
+    final effectivePadding = padding ?? const EdgeInsets.all(16);
 
     return Container(
-      padding: effectivePadding,
       decoration: effectiveDecoration,
       child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (topContent != null) ...[
-              topContent!,
-              const SizedBox(height: 12),
+        child: Padding(
+          padding: effectivePadding,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (topContent != null) ...[
+                topContent!,
+                const SizedBox(height: 16),
+              ],
+              _buildEnhancedButton(context, colorScheme),
             ],
-            EnhancedButton(
-              content: actionText,
-              onPressed: onAction,
-              isLoading: isLoading,
-              style: buttonStyle,
-              textStyle: buttonTextStyle,
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  /// Creates a bottom bar with amount display for expense screens
-  factory ActionBottomBar.withAmount({
-    Key? key,
-    required String actionText,
-    required VoidCallback? onAction,
-    required double amount,
-    required String currency,
-    bool isLoading = false,
-    EdgeInsetsGeometry? padding,
-    BoxDecoration? decoration,
-    ButtonStyle? buttonStyle,
-    TextStyle? buttonTextStyle,
-  }) {
-    return ActionBottomBar(
-      key: key,
-      actionText: actionText,
-      onAction: onAction,
-      isLoading: isLoading,
-      padding: padding,
-      decoration: decoration,
-      buttonStyle: buttonStyle,
-      buttonTextStyle: buttonTextStyle,
-      topContent: Builder(
-        builder: (context) {
-          final colorScheme = Theme.of(context).colorScheme;
-          return Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Total Amount',
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      fontWeight: FontWeight.w500,
-                      color: colorScheme.onSurfaceVariant,
-                    ),
+  Widget _buildEnhancedButton(BuildContext context, ColorScheme colorScheme) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            colorScheme.primary.withValues(alpha: 0.03),
+            colorScheme.primary.withValues(alpha: 0.08),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: colorScheme.primary.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: EnhancedButton(
+          content: actionText,
+          onPressed: onAction,
+          isLoading: isLoading,
+          style: buttonStyle ??
+              ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                foregroundColor: colorScheme.primary,
+                elevation: 0,
+                shadowColor: Colors.transparent,
+                padding: const EdgeInsets.symmetric(vertical: 0),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
-              Row(
-                children: [
-                  Text(
-                    currency,
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.primary,
-                        ),
+          textStyle: buttonTextStyle ??
+              Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.1,
                   ),
-                  const SizedBox(width: 4),
-                  Text(
-                    amount.toStringAsFixed(2),
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.primary,
-                        ),
-                  ),
-                ],
-              ),
-            ],
-          );
-        },
+        ),
       ),
     );
   }

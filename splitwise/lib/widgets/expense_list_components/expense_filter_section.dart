@@ -27,14 +27,6 @@ class ExpenseFilterSection extends StatelessWidget {
         selectedMemberId != null;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
-        ),
-      ),
       margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
       child: Row(
         children: [
@@ -45,14 +37,14 @@ class ExpenseFilterSection extends StatelessWidget {
           _buildFilterButton(
             context: context,
             icon: Icons.date_range_rounded,
-            label: selectedDateRange != null ? 'Date ✓' : 'Date',
+            label: selectedDateRange != null ? 'Date ' : 'Date',
             onTap: onSelectDateRange,
           ),
           const SizedBox(width: 6),
           _buildFilterButton(
             context: context,
             icon: Icons.person_rounded,
-            label: selectedMemberId != null ? 'Member ✓' : 'Member',
+            label: selectedMemberId != null ? 'Member ' : 'Member',
             onTap: onSelectMember,
           ),
           if (hasFilters) ...[
@@ -79,7 +71,7 @@ class ExpenseFilterSection extends StatelessWidget {
 
   Widget _buildCategoryDropdown(BuildContext context) {
     return Container(
-      height: 36,
+      height: 40,
       padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
         color: selectedCategory != null
@@ -88,8 +80,8 @@ class ExpenseFilterSection extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: selectedCategory != null
-              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.4)
-              : Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)
+              : Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
           width: 1,
         ),
       ),
@@ -198,14 +190,14 @@ class ExpenseFilterSection extends StatelessWidget {
     required String label,
     required VoidCallback onTap,
   }) {
-    final bool isActive = label.contains('✓');
+    final bool isActive = label.contains(' ');
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
         child: Container(
-          height: 36,
+          height: 40,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
           decoration: BoxDecoration(
             color: isActive
@@ -214,11 +206,11 @@ class ExpenseFilterSection extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: isActive
-                  ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)
+                  ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
                   : Theme.of(context)
                       .colorScheme
                       .outline
-                      .withValues(alpha: 0.3),
+                      .withValues(alpha: 0.1),
               width: 1,
             ),
           ),

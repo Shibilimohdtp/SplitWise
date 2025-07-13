@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:splitwise/models/expense.dart';
 import 'package:splitwise/services/settings_service.dart';
+import 'package:splitwise/utils/currency_utils.dart';
 
 class ExpenseCard extends StatelessWidget {
   final Expense expense;
@@ -54,7 +55,7 @@ class ExpenseCard extends StatelessWidget {
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
           ),
           boxShadow: [
             BoxShadow(
@@ -102,7 +103,7 @@ class ExpenseCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      '${settingsService.currency}${expense.amount.toStringAsFixed(2)}',
+                      '${getCurrencySymbol(settingsService.currency)}${expense.amount.toStringAsFixed(2)}',
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: Theme.of(context).colorScheme.primary,
@@ -288,7 +289,7 @@ class ExpenseCard extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            '${settingsService.currency}${expense.amount.toStringAsFixed(2)}',
+                            '${getCurrencySymbol(settingsService.currency)}${expense.amount.toStringAsFixed(2)}',
                             style: TextStyle(
                               color: Theme.of(context).colorScheme.primary,
                               fontSize: 16,

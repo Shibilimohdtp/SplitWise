@@ -89,7 +89,7 @@ class GroupListWidgetState extends State<GroupListWidget> {
                   verticalOffset: 50.0,
                   child: FadeInAnimation(
                     child: Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
+                      padding: const EdgeInsets.only(bottom: 12),
                       child: GroupCardWidget(
                         group: group,
                         userId: widget.userId,
@@ -169,13 +169,12 @@ class GroupListWidgetState extends State<GroupListWidget> {
       children: List.generate(
         3,
         (index) => Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: Card(
-            elevation: 1,
-            shadowColor: Theme.of(context).shadowColor.withValues(alpha: 0.1),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: BorderSide(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
                 color: Theme.of(context)
                     .colorScheme
                     .outline
@@ -203,10 +202,6 @@ class GroupListWidgetState extends State<GroupListWidget> {
                                 _buildSkeletonBox(size: 14),
                                 const SizedBox(width: 4),
                                 _buildSkeletonLine(width: 80, height: 12),
-                                const SizedBox(width: 8),
-                                _buildSkeletonBox(size: 3),
-                                const SizedBox(width: 8),
-                                _buildSkeletonLine(width: 100, height: 12),
                               ],
                             ),
                           ],
@@ -267,7 +262,7 @@ class GroupListWidgetState extends State<GroupListWidget> {
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+        color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(height / 2),
       ),
     );
@@ -278,7 +273,7 @@ class GroupListWidgetState extends State<GroupListWidget> {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+        color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(size / 4),
       ),
     );

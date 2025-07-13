@@ -126,39 +126,6 @@ class HomeDrawer extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  InkWell(
-                    onTap: () =>
-                        _navigateToScreen(context, const ProfileScreen()),
-                    borderRadius: BorderRadius.circular(8),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.account_circle_outlined,
-                            size: 16,
-                            color: Colors.white.withValues(alpha: 0.9),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            'View Profile',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.white.withValues(alpha: 0.9),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
                 ],
               ),
             );
@@ -171,11 +138,12 @@ class HomeDrawer extends StatelessWidget {
   Widget _buildDrawerBody(BuildContext context) {
     return Expanded(
       child: SingleChildScrollView(
+        padding: const EdgeInsets.all(8),
         child: Column(
           children: [
             _buildDrawerItem(
               context,
-              icon: Icons.person_outline,
+              icon: Icons.person_outline_rounded,
               title: 'Profile',
               onTap: () => _navigateToScreen(context, const ProfileScreen()),
             ),
@@ -185,14 +153,10 @@ class HomeDrawer extends StatelessWidget {
               title: 'Settings',
               onTap: () => _navigateToScreen(context, const SettingsScreen()),
             ),
-            Divider(
-                color: Theme.of(context)
-                    .colorScheme
-                    .outline
-                    .withValues(alpha: 0.1)),
+            const Divider(height: 16),
             _buildDrawerItem(
               context,
-              icon: Icons.exit_to_app,
+              icon: Icons.logout_rounded,
               title: 'Sign Out',
               onTap: () => _showSignOutDialog(context),
               textColor: Theme.of(context).colorScheme.error,
@@ -212,42 +176,32 @@ class HomeDrawer extends StatelessWidget {
     Color? textColor,
     Color? iconColor,
   }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      child: Material(
-        color: Colors.transparent,
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: (iconColor ?? Theme.of(context).colorScheme.primary)
-                        .withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    icon,
-                    color: iconColor ?? Theme.of(context).colorScheme.primary,
-                    size: 20,
-                  ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                color: iconColor ?? colorScheme.onSurfaceVariant,
+                size: 22,
+              ),
+              const SizedBox(width: 16),
+              Text(
+                title,
+                style: textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: textColor ?? colorScheme.onSurface,
                 ),
-                const SizedBox(width: 16),
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w500,
-                        color: textColor ??
-                            Theme.of(context).colorScheme.onSurface,
-                      ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -266,58 +220,29 @@ class HomeDrawer extends StatelessWidget {
     showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(
-          'Sign Out',
-          style: Theme.of(dialogContext).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-        ),
-        content: Text(
-          'Are you sure you want to sign out?',
-          style: Theme.of(dialogContext).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(dialogContext).colorScheme.onSurfaceVariant,
-              ),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Sign Out'),
+        content: const Text('Are you sure you want to sign out?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: Text(
-              'Cancel',
-              style: TextStyle(
-                color: Theme.of(dialogContext).colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w500,
-                fontSize: 12,
-              ),
-            ),
+            child: const Text('Cancel'),
           ),
           FilledButton(
             onPressed: () {
               Navigator.pop(dialogContext, true);
-              // Handle sign out in the onPressed callback
               _handleSignOut(context);
             },
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(dialogContext).colorScheme.error,
-              foregroundColor: Theme.of(dialogContext).colorScheme.onError,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
             ),
-            child: const Text(
-              'Sign Out',
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
-            ),
+            child: const Text('Sign Out'),
           ),
         ],
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
       ),
     );
   }
 
-  // Separate method to handle sign out logic
   Future<void> _handleSignOut(BuildContext context) async {
     await authService.signOut();
   }

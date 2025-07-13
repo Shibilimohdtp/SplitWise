@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:splitwise/widgets/form/section_card.dart';
-import 'package:splitwise/widgets/form/section_header.dart';
 
 class GroupInfoSection extends StatelessWidget {
   final TextEditingController nameController;
@@ -18,144 +16,196 @@ class GroupInfoSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SectionCard(
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: colorScheme.outline.withValues(alpha: 0.08),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SectionHeader(
-            title: 'Group Information',
-            icon: Icons.group_outlined,
+          _buildHeader(
+            context,
+            colorScheme,
+            textTheme,
+            icon: Icons.group_work_rounded,
+            title: 'Group Details',
+            subtitle: 'Name and describe your group',
+            primaryColor: colorScheme.primary,
+            badgeText: 'Core Info',
           ),
-          const SizedBox(height: 20),
-          _buildTextField(
-            context: context,
-            controller: nameController,
-            label: 'Group Name',
-            hint: 'Enter a descriptive name for your group',
-            icon: Icons.group_outlined,
-            validator: nameValidator,
-            helperText:
-                'Choose a name that clearly identifies your group purpose',
-          ),
-          const SizedBox(height: 16),
-          _buildTextField(
-            context: context,
-            controller: descriptionController,
-            label: 'Description',
-            hint: 'Describe what this group is for',
-            icon: Icons.description_outlined,
-            maxLines: 3,
-            validator: descriptionValidator,
-            helperText:
-                'Add details about the group purpose, members, or any other relevant information',
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                _buildNameField(context),
+                const SizedBox(height: 16),
+                _buildDescriptionField(context),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildTextField({
-    required BuildContext context,
-    required TextEditingController controller,
-    required String label,
-    required String hint,
+  Widget _buildHeader(
+    BuildContext context,
+    ColorScheme colorScheme,
+    TextTheme textTheme, {
     required IconData icon,
-    int maxLines = 1,
-    String? Function(String?)? validator,
-    FocusNode? focusNode,
-    void Function(String)? onSubmitted,
-    TextInputType? keyboardType,
-    String? helperText,
+    required String title,
+    required String subtitle,
+    required Color primaryColor,
+    required String badgeText,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                fontWeight: FontWeight.w500,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            primaryColor.withValues(alpha: 0.05),
+            primaryColor.withValues(alpha: 0.02),
+          ],
         ),
-        const SizedBox(height: 6),
-        TextFormField(
-          controller: controller,
-          focusNode: focusNode,
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurfaceVariant
-                      .withValues(alpha: 0.6),
-                ),
-            prefixIcon: Icon(icon,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                size: 18),
-            filled: true,
-            fillColor: Theme.of(context)
-                .colorScheme
-                .surfaceContainerHighest
-                .withValues(alpha: 0.1),
-            border: OutlineInputBorder(
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: primaryColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .outline
-                      .withValues(alpha: 0.1)),
+              border: Border.all(
+                color: primaryColor.withValues(alpha: 0.2),
+                width: 1,
+              ),
             ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .outline
-                      .withValues(alpha: 0.3)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                  color: Theme.of(context).colorScheme.primary, width: 1.5),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide:
-                  BorderSide(color: Theme.of(context).colorScheme.error),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                  color: Theme.of(context).colorScheme.error, width: 1.5),
-            ),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            helperText: helperText,
-            helperStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurfaceVariant
-                      .withValues(alpha: 0.7),
-                  letterSpacing: 0.2,
-                ),
-            errorStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.error,
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: 0.2,
-                ),
+            child: Icon(icon, size: 20, color: primaryColor),
           ),
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
-                letterSpacing: 0.1,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: primaryColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: primaryColor.withValues(alpha: 0.3),
+                width: 1,
               ),
-          maxLines: maxLines,
-          validator: validator,
-          onFieldSubmitted: onSubmitted,
-          keyboardType: keyboardType,
-          cursorColor: Theme.of(context).colorScheme.primary,
-          cursorRadius: const Radius.circular(2),
+            ),
+            child: Text(
+              badgeText,
+              style: textTheme.labelSmall?.copyWith(
+                color: primaryColor,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNameField(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return TextFormField(
+      controller: nameController,
+      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            color: colorScheme.onSurface,
+          ),
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: colorScheme.surfaceContainer,
+        labelText: 'Group Name',
+        hintText: 'e.g., Trip to Goa',
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
         ),
-      ],
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+            color: colorScheme.outline.withValues(alpha: 0.1),
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
+        ),
+        contentPadding:
+            const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      ),
+      validator: nameValidator,
+    );
+  }
+
+  Widget _buildDescriptionField(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return TextFormField(
+      controller: descriptionController,
+      maxLines: 3,
+      decoration: InputDecoration(
+        labelText: 'Description',
+        hintText: 'A short description of the group',
+        filled: true,
+        fillColor: colorScheme.surfaceContainer,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+            color: colorScheme.outline.withValues(alpha: 0.1),
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
+        ),
+      ),
+      validator: descriptionValidator,
     );
   }
 }

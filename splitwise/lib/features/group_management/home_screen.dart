@@ -127,7 +127,7 @@ class HomeScreenState extends State<HomeScreen>
                 .getUnreadNotificationCount(authService.currentUser!.uid),
             builder: (context, snapshot) {
               final unreadCount = snapshot.hasData ? snapshot.data! : 0;
-              return HomeppBar(
+              return HomeAppBar(
                 isSearching: _isSearching,
                 isScrolled: _isScrolled,
                 appBarElevation: _appBarElevation,

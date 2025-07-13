@@ -5,6 +5,7 @@ import 'package:splitwise/services/settings_service.dart';
 import 'package:splitwise/features/group_management/group_detail_screen.dart';
 import 'package:splitwise/features/expense_tracking/add_expense_screen.dart';
 import 'package:splitwise/features/expense_tracking/expense_analysis_screen.dart';
+import 'package:splitwise/utils/currency_utils.dart';
 
 class GroupCardWidget extends StatefulWidget {
   final Group group;
@@ -32,13 +33,22 @@ class GroupCardWidgetState extends State<GroupCardWidget> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return Card(
+    return Container(
       key: ValueKey('group_card_${widget.group.id}'),
-      elevation: 0.2,
-      shadowColor: colorScheme.shadow,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: colorScheme.outline.withValues(alpha: 0.1)),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: colorScheme.outline.withValues(alpha: 0.1),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: InkWell(
         onTap: () => Navigator.push(
@@ -156,7 +166,7 @@ class GroupCardWidgetState extends State<GroupCardWidget> {
                       color: Theme.of(context)
                           .colorScheme
                           .outline
-                          .withValues(alpha: 0.2),
+                          .withValues(alpha: 0.1),
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(
@@ -198,7 +208,7 @@ class GroupCardWidgetState extends State<GroupCardWidget> {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    '\$${balance.abs().toStringAsFixed(2)}',
+                                    '${getCurrencySymbol(widget.settingsService.currency)}${balance.abs().toStringAsFixed(2)}',
                                     style: Theme.of(context)
                                         .textTheme
                                         .titleSmall
@@ -622,7 +632,7 @@ class GroupCardWidgetState extends State<GroupCardWidget> {
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+        color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(height / 2),
       ),
     );
@@ -633,7 +643,7 @@ class GroupCardWidgetState extends State<GroupCardWidget> {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+        color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(size / 4),
       ),
     );

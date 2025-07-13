@@ -12,26 +12,25 @@ class GroupTabBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final outlineColor = colorScheme.outline.withValues(alpha: 0.3);
 
     return Container(
+      height: 48,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: outlineColor),
+        color: colorScheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.1)),
       ),
       child: TabBar(
         controller: tabController,
         indicatorColor: colorScheme.primary,
-        indicatorWeight: 0, // Hidden by BoxDecoration indicator
+        indicatorWeight: 0,
         labelColor: colorScheme.onPrimary,
         unselectedLabelColor: colorScheme.onSurfaceVariant,
-        labelStyle: textTheme.labelMedium?.copyWith(
+        labelStyle: textTheme.labelLarge?.copyWith(
           fontWeight: FontWeight.w600,
-          letterSpacing: 0.5,
         ),
-        unselectedLabelStyle: textTheme.labelMedium?.copyWith(
+        unselectedLabelStyle: textTheme.labelLarge?.copyWith(
           fontWeight: FontWeight.w500,
         ),
         indicatorSize: TabBarIndicatorSize.tab,
@@ -39,31 +38,43 @@ class GroupTabBar extends StatelessWidget {
         padding: const EdgeInsets.all(4),
         labelPadding: const EdgeInsets.symmetric(horizontal: 8),
         indicator: BoxDecoration(
-          color: colorScheme.primary,
-          borderRadius: BorderRadius.circular(8),
+          gradient: LinearGradient(
+            colors: [
+              colorScheme.primary,
+              colorScheme.primary.withValues(alpha: 0.8),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: colorScheme.primary.withValues(alpha: 0.2),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            )
+          ],
         ),
-        splashBorderRadius: BorderRadius.circular(8),
+        splashBorderRadius: BorderRadius.circular(12),
         tabs: const [
           Tab(
-            height: 44,
+            height: 40,
             child: Row(
-              mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.receipt_rounded, size: 16),
-                SizedBox(width: 6),
+                Icon(Icons.receipt_long_rounded, size: 16),
+                SizedBox(width: 8),
                 Text('Expenses'),
               ],
             ),
           ),
           Tab(
-            height: 44,
+            height: 40,
             child: Row(
-              mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(Icons.group_rounded, size: 16),
-                SizedBox(width: 6),
+                SizedBox(width: 8),
                 Text('Members'),
               ],
             ),

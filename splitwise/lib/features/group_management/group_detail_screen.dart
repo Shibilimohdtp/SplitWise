@@ -235,6 +235,7 @@ class GroupDetailScreenState extends State<GroupDetailScreen>
       child: ExpenseList(
         groupId: widget.group.id,
         onDeleteExpense: _handleDeleteExpense,
+        members: _members,
       ),
     );
   }

@@ -127,15 +127,20 @@ class ExpenseService {
   }
 
   Future<Map<String, double>> calculateOverallBalance(String userId) async {
-    final userGroups = await _firestore
+    final userGroupsById = await _firestore
         .collection('groups')
-        .where('members', arrayContains: userId)
+        .where('memberIds', arrayContains: userId)
+        .get();
+    final userGroupsByEmail = await _firestore
+        .collection('groups')
+        .where('invitedEmails', arrayContains: userId)
         .get();
 
+    final userGroups = [...userGroupsById.docs, ...userGroupsByEmail.docs];
     double totalOwed = 0;
     double totalOwing = 0;
 
-    for (var groupDoc in userGroups.docs) {
+    for (var groupDoc in userGroups) {
       final groupId = groupDoc.id;
       final groupBalance = await calculateBalances(groupId);
       final userBalance = groupBalance[userId] ?? 0;

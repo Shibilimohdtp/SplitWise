@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:splitwise/models/group.dart';
+import 'package:splitwise/services/settings_service.dart';
 import 'package:splitwise/services/user_service.dart';
-import 'package:splitwise/widgets/form/section_card.dart';
-import 'package:splitwise/widgets/form/section_header.dart';
+import 'package:splitwise/utils/currency_utils.dart';
 
 class SplitMethodSection extends StatelessWidget {
   final Group group;
@@ -38,69 +39,97 @@ class SplitMethodSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SectionCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SectionHeader(
-            title: 'Split Method',
-            icon: Icons.calculate_outlined,
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: colorScheme.outline.withValues(alpha: 0.08),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
-          const SizedBox(height: 12),
-          _buildSplitMethodSelector(context),
-          if (splitMethod != 'Equal') ...[
-            const SizedBox(height: 20),
-            Text(
-              'Split Details',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
+        ],
+      ),
+      child: Column(
+        children: [
+          _buildHeader(
+            context,
+            colorScheme,
+            textTheme,
+            icon: Icons.call_split_rounded,
+            title: 'Split Method',
+            subtitle: 'How the expense is divided',
+            primaryColor: colorScheme.primary,
+            badgeText: 'Method',
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildSplitMethodSelector(context),
+                if (splitMethod != 'Equal') ...[
+                  const SizedBox(height: 20),
+                  Text(
+                    'Split Details',
+                    style: textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
+                  const SizedBox(height: 12),
+                  _buildSplitInputs(context),
+                  if (totalAmount != null && totalAmount! > 0) ...[
+                    const SizedBox(height: 16),
+                    _buildSplitSummary(context),
+                  ],
+                ],
+              ],
             ),
-            const SizedBox(height: 8),
-            _buildSplitInputs(context),
-            if (totalAmount != null && totalAmount! > 0) ...[
-              const SizedBox(height: 16),
-              _buildSplitSummary(context),
-            ],
-          ],
+          ),
         ],
       ),
     );
   }
 
   Widget _buildSplitMethodSelector(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
           height: 80,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: splitMethods.map((method) {
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: splitMethods.length,
+            separatorBuilder: (context, index) => const SizedBox(width: 8),
+            itemBuilder: (context, index) {
+              final method = splitMethods[index];
               final isSelected = splitMethod == method;
               return GestureDetector(
                 onTap: () => onSplitMethodChanged(method),
-                child: Container(
-                  width: MediaQuery.of(context).size.width / 4.8,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  width: 80,
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? Theme.of(context)
-                            .colorScheme
-                            .primary
-                            .withValues(alpha: 0.1)
-                        : Theme.of(context)
-                            .colorScheme
-                            .surfaceContainerHighest
-                            .withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(12),
+                        ? colorScheme.primary.withValues(alpha: 0.1)
+                        : colorScheme.surfaceContainer,
+                    borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: isSelected
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context)
-                              .colorScheme
-                              .outline
-                              .withValues(alpha: 0.3),
-                      width: isSelected ? 1.5 : 1,
+                          ? colorScheme.primary.withValues(alpha: 0.5)
+                          : colorScheme.outline.withValues(alpha: 0.1),
+                      width: 1.5,
                     ),
                   ),
                   child: Column(
@@ -109,20 +138,19 @@ class SplitMethodSection extends StatelessWidget {
                       Icon(
                         _getSplitMethodIcon(method),
                         color: isSelected
-                            ? Theme.of(context).colorScheme.primary
-                            : Theme.of(context).colorScheme.onSurfaceVariant,
+                            ? colorScheme.primary
+                            : colorScheme.onSurfaceVariant,
                         size: 24,
                       ),
                       const SizedBox(height: 8),
                       Text(
                         method,
-                        style: TextStyle(
-                          fontSize: 12,
+                        style: textTheme.labelSmall?.copyWith(
                           fontWeight:
                               isSelected ? FontWeight.w600 : FontWeight.normal,
                           color: isSelected
-                              ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context).colorScheme.onSurfaceVariant,
+                              ? colorScheme.primary
+                              : colorScheme.onSurfaceVariant,
                         ),
                         textAlign: TextAlign.center,
                         overflow: TextOverflow.ellipsis,
@@ -131,16 +159,22 @@ class SplitMethodSection extends StatelessWidget {
                   ),
                 ),
               );
-            }).toList(),
+            },
           ),
         ),
         if (splitMethod != 'Equal') ...[
           const SizedBox(height: 16),
-          Text(
-            _getSplitMethodDescription(splitMethod),
-            style: TextStyle(
-              fontSize: 12,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: colorScheme.primaryContainer.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              _getSplitMethodDescription(splitMethod),
+              style: textTheme.bodySmall?.copyWith(
+                color: colorScheme.onPrimaryContainer,
+              ),
             ),
           ),
         ],
@@ -161,22 +195,17 @@ class SplitMethodSection extends StatelessWidget {
   }
 
   Widget _buildParticipantCard(BuildContext context, String memberIdentifier) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
+        color: colorScheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+          color: colorScheme.outline.withValues(alpha: 0.1),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -184,7 +213,6 @@ class SplitMethodSection extends StatelessWidget {
           _buildParticipantHeader(context, memberIdentifier),
           const SizedBox(height: 12),
           _buildInputField(context, memberIdentifier),
-          _buildCalculationHelper(context, memberIdentifier),
         ],
       ),
     );
@@ -193,6 +221,9 @@ class SplitMethodSection extends StatelessWidget {
   Widget _buildParticipantHeader(
       BuildContext context, String memberIdentifier) {
     final isInvited = group.invitedEmails.contains(memberIdentifier);
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return FutureBuilder<String>(
       future: isInvited
           ? Future.value(memberIdentifier)
@@ -201,22 +232,34 @@ class SplitMethodSection extends StatelessWidget {
         final userName = snapshot.data ?? 'Loading...';
         return Row(
           children: [
-            // You can add a user avatar here if available
-            const Icon(Icons.person_outline, size: 20),
-            const SizedBox(width: 8),
+            CircleAvatar(
+              radius: 16,
+              backgroundColor: colorScheme.primary.withValues(alpha: 0.1),
+              child: Text(
+                userName.isNotEmpty ? userName[0].toUpperCase() : '?',
+                style: textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.primary,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
             Expanded(
               child: Text(
                 userName,
-                style: Theme.of(context).textTheme.titleMedium,
+                style: textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
             Text(
-              _getCurrentValueDisplay(memberIdentifier),
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              _getCurrentValueDisplay(memberIdentifier, context),
+              style: textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: colorScheme.primary,
+              ),
             ),
           ],
         );
@@ -225,97 +268,48 @@ class SplitMethodSection extends StatelessWidget {
   }
 
   Widget _buildInputField(BuildContext context, String memberIdentifier) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primaryContainer,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(
-            _getInputIcon(),
-            size: 18,
-            color: Theme.of(context).colorScheme.onPrimaryContainer,
+    final settingsService =
+        Provider.of<SettingsService>(context, listen: false);
+    final currencySymbol = getCurrencySymbol(settingsService.currency);
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return TextFormField(
+      initialValue: _getInitialValue(memberIdentifier),
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: colorScheme.surface,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+            color: colorScheme.outline.withValues(alpha: 0.1),
           ),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: TextFormField(
-            initialValue: _getInitialValue(memberIdentifier),
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: InputDecoration(
-              filled: true,
-              fillColor: Theme.of(context)
-                  .colorScheme
-                  .surfaceContainerHighest
-                  .withValues(alpha: 0.3),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide.none,
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(
-                  color: Theme.of(context).colorScheme.primary,
-                  width: 2,
-                ),
-              ),
-              isDense: true,
-              contentPadding: const EdgeInsets.all(12),
-              prefixText: splitMethod == 'Exact' ? '\$ ' : null,
-              suffixText: splitMethod == 'Percentage' ? ' %' : null,
-              hintText: _getHintText(),
-            ),
-            onChanged: (value) => _onInputChanged(memberIdentifier, value),
-          ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
         ),
-        if (_isValid(memberIdentifier))
-          Container(
-            margin: const EdgeInsets.only(left: 8),
-            child: Icon(
-              Icons.check_circle,
-              color: Theme.of(context).colorScheme.primary,
-              size: 20,
-            ),
-          ),
-      ],
-    );
-  }
-
-  Widget _buildCalculationHelper(
-      BuildContext context, String memberIdentifier) {
-    final helperText = _getHelperText(memberIdentifier);
-    if (helperText.isEmpty) return const SizedBox.shrink();
-
-    return Container(
-      margin: const EdgeInsets.only(top: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: Theme.of(context)
-            .colorScheme
-            .secondaryContainer
-            .withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(6),
+        isDense: true,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        prefixIcon: Icon(
+          _getInputIcon(),
+          size: 20,
+          color: colorScheme.primary,
+        ),
+        prefixText: splitMethod == 'Exact' ? '$currencySymbol ' : null,
+        suffixText: splitMethod == 'Percentage'
+            ? ' %'
+            : splitMethod == 'Shares'
+                ? ' shares'
+                : null,
+        hintText: _getHintText(),
       ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.info_outline,
-            size: 14,
-            color: Theme.of(context).colorScheme.onSecondaryContainer,
-          ),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Text(
-              helperText,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSecondaryContainer,
-                  ),
-            ),
-          ),
-        ],
-      ),
+      onChanged: (value) => _onInputChanged(memberIdentifier, value),
     );
   }
 
@@ -359,63 +353,28 @@ class SplitMethodSection extends StatelessWidget {
     }
   }
 
-  bool _isValid(String memberIdentifier) {
-    // Basic validation, can be expanded
-    switch (splitMethod) {
-      case 'Exact':
-        return (customSplitAmounts[memberIdentifier] ?? 0) > 0;
-      case 'Percentage':
-        return (percentageSplits[memberIdentifier] ?? 0) > 0;
-      case 'Shares':
-        return (shareSplits[memberIdentifier] ?? 0) > 0;
-      default:
-        return false;
-    }
-  }
-
-  String _getCurrentValueDisplay(String memberIdentifier) {
+  String _getCurrentValueDisplay(
+      String memberIdentifier, BuildContext context) {
     if (totalAmount == null || totalAmount! <= 0) return '';
+    final settingsService =
+        Provider.of<SettingsService>(context, listen: false);
+    final currencySymbol = getCurrencySymbol(settingsService.currency);
 
     switch (splitMethod) {
       case 'Exact':
         final amount = customSplitAmounts[memberIdentifier] ?? 0;
-        return '\$${amount.toStringAsFixed(2)}';
+        return '$currencySymbol${amount.toStringAsFixed(2)}';
       case 'Percentage':
         final percentage = percentageSplits[memberIdentifier] ?? 0;
         final amount = (totalAmount! * percentage) / 100;
-        return '\$${amount.toStringAsFixed(2)}';
+        return '$currencySymbol${amount.toStringAsFixed(2)}';
       case 'Shares':
         final totalShares =
             shareSplits.values.where((s) => s > 0).fold(0, (p, c) => p + c);
-        if (totalShares == 0) return '\$0.00';
+        if (totalShares == 0) return '${currencySymbol}0.00';
         final userShares = shareSplits[memberIdentifier] ?? 0;
         final amount = (totalAmount! * userShares) / totalShares;
-        return '\$${amount.toStringAsFixed(2)}';
-      default:
-        return '';
-    }
-  }
-
-  String _getHelperText(String memberIdentifier) {
-    if (totalAmount == null || totalAmount! <= 0) {
-      return 'Enter total amount to see split calculations.';
-    }
-
-    switch (splitMethod) {
-      case 'Exact':
-        final totalAllocated =
-            customSplitAmounts.values.fold(0.0, (p, c) => p + c);
-        final remaining = totalAmount! - totalAllocated;
-        return 'Remaining: \$${remaining.toStringAsFixed(2)}';
-      case 'Percentage':
-        final totalPercentage =
-            percentageSplits.values.fold(0.0, (p, c) => p + c);
-        final remaining = 100 - totalPercentage;
-        return 'Remaining: ${remaining.toStringAsFixed(1)}%';
-      case 'Shares':
-        final totalShares =
-            shareSplits.values.where((s) => s > 0).fold(0, (p, c) => p + c);
-        return 'Total shares: $totalShares';
+        return '$currencySymbol${amount.toStringAsFixed(2)}';
       default:
         return '';
     }
@@ -424,28 +383,28 @@ class SplitMethodSection extends StatelessWidget {
   IconData _getSplitMethodIcon(String method) {
     switch (method) {
       case 'Equal':
-        return Icons.drag_handle;
+        return Icons.balance_rounded;
       case 'Exact':
-        return Icons.attach_money;
+        return Icons.money_rounded;
       case 'Percentage':
-        return Icons.percent;
+        return Icons.percent_rounded;
       case 'Shares':
-        return Icons.pie_chart;
+        return Icons.pie_chart_rounded;
       default:
-        return Icons.calculate_outlined;
+        return Icons.calculate_rounded;
     }
   }
 
   IconData _getInputIcon() {
     switch (splitMethod) {
       case 'Exact':
-        return Icons.money;
+        return Icons.attach_money_rounded;
       case 'Percentage':
-        return Icons.percent_outlined;
+        return Icons.percent_rounded;
       case 'Shares':
-        return Icons.pie_chart_outline;
+        return Icons.pie_chart_outline_rounded;
       default:
-        return Icons.money;
+        return Icons.money_rounded;
     }
   }
 
@@ -467,6 +426,10 @@ class SplitMethodSection extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
+    final settingsService =
+        Provider.of<SettingsService>(context, listen: false);
+    final currencySymbol = getCurrencySymbol(settingsService.currency);
+    final colorScheme = Theme.of(context).colorScheme;
     bool isValid = true;
     String message = '';
     double totalAllocated = 0;
@@ -485,7 +448,7 @@ class SplitMethodSection extends StatelessWidget {
         final difference = (totalAmount! - totalAllocated).abs();
         isValid = difference < 0.01;
         message =
-            'Total: \$${totalAllocated.toStringAsFixed(2)} of \$${totalAmount!.toStringAsFixed(2)}';
+            'Total: $currencySymbol${totalAllocated.toStringAsFixed(2)} / ${totalAmount!.toStringAsFixed(2)}';
         break;
 
       case 'Percentage':
@@ -494,7 +457,7 @@ class SplitMethodSection extends StatelessWidget {
           (sum, uid) => sum + (percentageSplits[uid] ?? 0),
         );
         isValid = (totalPercentage - 100).abs() < 0.01;
-        message = 'Total: ${totalPercentage.toStringAsFixed(1)}% of 100%';
+        message = 'Total: ${totalPercentage.toStringAsFixed(1)}% / 100%';
         break;
 
       case 'Shares':
@@ -511,29 +474,115 @@ class SplitMethodSection extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isValid
-            ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
-            : Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
+            ? colorScheme.primary.withValues(alpha: 0.1)
+            : colorScheme.error.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isValid
+              ? colorScheme.primary.withValues(alpha: 0.2)
+              : colorScheme.error.withValues(alpha: 0.2),
+        ),
       ),
       child: Row(
         children: [
           Icon(
             isValid ? Icons.check_circle_outline : Icons.error_outline,
-            size: 18,
-            color: isValid
-                ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.error,
+            size: 20,
+            color: isValid ? colorScheme.primary : colorScheme.error,
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
               message,
               style: TextStyle(
                 fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: isValid
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.error,
+                fontWeight: FontWeight.w600,
+                color: isValid ? colorScheme.primary : colorScheme.error,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader(
+    BuildContext context,
+    ColorScheme colorScheme,
+    TextTheme textTheme, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color primaryColor,
+    required String badgeText,
+  }) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            primaryColor.withValues(alpha: 0.05),
+            primaryColor.withValues(alpha: 0.02),
+          ],
+        ),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: primaryColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: primaryColor.withValues(alpha: 0.2),
+                width: 1,
+              ),
+            ),
+            child: Icon(icon, size: 20, color: primaryColor),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: primaryColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: primaryColor.withValues(alpha: 0.3),
+                width: 1,
+              ),
+            ),
+            child: Text(
+              badgeText,
+              style: textTheme.labelSmall?.copyWith(
+                color: primaryColor,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),

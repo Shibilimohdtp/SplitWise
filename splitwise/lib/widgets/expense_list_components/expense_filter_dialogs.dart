@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:splitwise/utils/app_color.dart';
 
 class ExpenseFilterDialogs {
   static Future<DateTimeRange?> showDateRangeFilterDialog(
@@ -9,168 +8,142 @@ class ExpenseFilterDialogs {
 
     return showDialog<DateTimeRange?>(
       context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        backgroundColor: colorScheme.surface,
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: colorScheme.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(
-                      Icons.date_range_rounded,
-                      size: 16,
-                      color: colorScheme.primary,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    'Select Time Period',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.1,
-                        ),
-                  ),
-                ],
+      builder: (context) => SimpleDialog(
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: colorScheme.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
               ),
-              const SizedBox(height: 20),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  _buildQuickSelectChip(
-                    context: context,
-                    label: 'Last 7 days',
-                    onTap: () => _setQuickDateRange(context, 7),
-                  ),
-                  _buildQuickSelectChip(
-                    context: context,
-                    label: 'Last 30 days',
-                    onTap: () => _setQuickDateRange(context, 30),
-                  ),
-                  _buildQuickSelectChip(
-                    context: context,
-                    label: 'Last 3 months',
-                    onTap: () => _setQuickDateRange(context, 90),
-                  ),
-                  _buildQuickSelectChip(
-                    context: context,
-                    label: 'Last 6 months',
-                    onTap: () => _setQuickDateRange(context, 180),
-                  ),
-                  _buildQuickSelectChip(
-                    context: context,
-                    label: 'This year',
-                    onTap: () {
-                      final now = DateTime.now();
-                      final startOfYear = DateTime(now.year, 1, 1);
-                      Navigator.pop(
-                          context, DateTimeRange(start: startOfYear, end: now));
-                    },
-                  ),
-                  _buildQuickSelectChip(
-                    context: context,
-                    label: 'All time',
-                    onTap: () {
-                      Navigator.pop(context, null);
-                    },
-                  ),
-                ],
+              child: Icon(
+                Icons.date_range_rounded,
+                size: 16,
+                color: colorScheme.primary,
               ),
-              const SizedBox(height: 16),
-              InkWell(
-                onTap: () async {
-                  Navigator.pop(context);
-                  final DateTimeRange? picked = await showDateRangePicker(
-                    context: context,
-                    firstDate: DateTime(2000),
-                    lastDate: DateTime.now(),
-                    initialDateRange: currentRange ??
-                        DateTimeRange(
-                          start:
-                              DateTime.now().subtract(const Duration(days: 30)),
-                          end: DateTime.now(),
-                        ),
-                  );
-                  if (picked != null && context.mounted) {
-                    Navigator.pop(context, picked);
-                  }
-                },
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'Select Time Period',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.1,
+                  ),
+            ),
+          ],
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        contentPadding: const EdgeInsets.symmetric(vertical: 12),
+        children: [
+          SimpleDialogOption(
+            onPressed: () => _setQuickDateRange(context, 7),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            child: Text('Last 7 days',
+                style: TextStyle(
+                    fontSize: 14,
+                    color: Theme.of(context).colorScheme.onSurface)),
+          ),
+          SimpleDialogOption(
+            onPressed: () => _setQuickDateRange(context, 30),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            child: Text('Last 30 days',
+                style: TextStyle(
+                    fontSize: 14,
+                    color: Theme.of(context).colorScheme.onSurface)),
+          ),
+          SimpleDialogOption(
+            onPressed: () => _setQuickDateRange(context, 90),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            child: Text('Last 3 months',
+                style: TextStyle(
+                    fontSize: 14,
+                    color: Theme.of(context).colorScheme.onSurface)),
+          ),
+          SimpleDialogOption(
+            onPressed: () => _setQuickDateRange(context, 180),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            child: Text('Last 6 months',
+                style: TextStyle(
+                    fontSize: 14,
+                    color: Theme.of(context).colorScheme.onSurface)),
+          ),
+          SimpleDialogOption(
+            onPressed: () {
+              final now = DateTime.now();
+              final startOfYear = DateTime(now.year, 1, 1);
+              Navigator.pop(
+                  context, DateTimeRange(start: startOfYear, end: now));
+            },
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            child: Text('This year',
+                style: TextStyle(
+                    fontSize: 14,
+                    color: Theme.of(context).colorScheme.onSurface)),
+          ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context, null),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            child: Text('All time',
+                style: TextStyle(
+                    fontSize: 14,
+                    color: Theme.of(context).colorScheme.onSurface)),
+          ),
+          const Divider(height: 1),
+          SimpleDialogOption(
+            onPressed: () async {
+              final DateTimeRange? picked = await showDateRangePicker(
+                context: context,
+                firstDate: DateTime(2000),
+                lastDate: DateTime.now(),
+                initialDateRange: currentRange ??
+                    DateTimeRange(
+                      start: DateTime.now().subtract(const Duration(days: 30)),
+                      end: DateTime.now(),
+                    ),
+              );
+              if (picked != null && context.mounted) {
+                Navigator.pop(context, picked);
+              }
+            },
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+            child: Row(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
                   decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainerLowest,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: colorScheme.outline.withValues(alpha: 0.1),
-                    ),
+                    color: colorScheme.primary.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
                   ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.calendar_today_outlined,
-                        size: 16,
-                        color: colorScheme.primary,
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        'Custom Range',
-                        style: TextStyle(
-                          color: colorScheme.primary,
-                          fontWeight: FontWeight.w500,
-                          fontSize: 14,
-                        ),
-                      ),
-                      const Spacer(),
-                      Icon(
-                        Icons.arrow_forward_ios_rounded,
-                        size: 14,
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ],
+                  alignment: Alignment.center,
+                  child: Icon(
+                    Icons.calendar_today_outlined,
+                    size: 16,
+                    color: colorScheme.primary,
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(width: 12),
+                Text(
+                  'Custom Range',
+                  style: TextStyle(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                  ),
+                ),
+                const Spacer(),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 14,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ],
+            ),
           ),
-        ),
-      ),
-    );
-  }
-
-  static Widget _buildQuickSelectChip({
-    required BuildContext context,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: AppColors.backgroundLight,
-          border: Border.all(color: AppColors.borderLight),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          label,
-          style: const TextStyle(
-            color: AppColors.textMain,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
+        ],
       ),
     );
   }

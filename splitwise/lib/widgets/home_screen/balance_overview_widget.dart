@@ -7,6 +7,7 @@ import 'package:splitwise/models/expense.dart';
 import 'package:splitwise/services/expense_service.dart';
 import 'package:splitwise/services/settings_service.dart';
 import 'package:splitwise/services/user_service.dart';
+import 'package:splitwise/utils/currency_utils.dart';
 import 'package:splitwise/widgets/home_screen/monthly_summary_bottom_sheet.dart';
 
 // Balance Overview Widget for the home screen
@@ -52,12 +53,30 @@ class BalanceOverviewWidgetState extends State<BalanceOverviewWidget> {
   }
 
   @override
+  void didUpdateWidget(BalanceOverviewWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.userId != oldWidget.userId) {
+      // If the userId changes, re-fetch the data
+      _fetchData();
+    }
+  }
+
+  void _fetchData() {
+    _balanceFuture = _expenseService.calculateOverallBalance(widget.userId);
+    _recentActivityFuture = _fetchRecentActivity();
+    _monthlySummaryFuture = _fetchMonthlySummary();
+    if (mounted) {
+      setState(() {}); // Trigger a rebuild
+    }
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final settingsService =
         Provider.of<SettingsService>(context, listen: false);
     _expenseService = ExpenseService(settingsService);
-
+    _fetchData();
     // Initialize futures only once
     _balanceFuture ??= _expenseService.calculateOverallBalance(widget.userId);
     _recentActivityFuture ??=
@@ -70,15 +89,22 @@ class BalanceOverviewWidgetState extends State<BalanceOverviewWidget> {
   Future<List<Map<String, dynamic>>> _fetchRecentActivity() async {
     try {
       // Get all groups the user is a member of
-      final userGroups = await _firestore
+      final userGroupsById = await _firestore
           .collection('groups')
-          .where('members', arrayContains: widget.userId)
+          .where('memberIds', arrayContains: widget.userId)
           .get();
+
+      final userGroupsByEmail = await _firestore
+          .collection('groups')
+          .where('invitedEmails', arrayContains: widget.userId)
+          .get();
+
+      final userGroups = [...userGroupsById.docs, ...userGroupsByEmail.docs];
 
       // Collect recent expenses from all groups
       List<Map<String, dynamic>> recentActivity = [];
 
-      for (var groupDoc in userGroups.docs) {
+      for (var groupDoc in userGroups) {
         final groupId = groupDoc.id;
         final groupName = groupDoc.data()['name'] ?? 'Unknown Group';
 
@@ -94,7 +120,10 @@ class BalanceOverviewWidgetState extends State<BalanceOverviewWidget> {
         for (var doc in expenses.docs) {
           final expense = Expense.fromFirestore(doc);
           // Use the class instance instead of creating a new one
-          final payerName = await _userService.getUserName(expense.payerId);
+          final isPayerUser = await _userService.isUser(expense.payerId);
+          final payerName = isPayerUser
+              ? await _userService.getUserName(expense.payerId)
+              : expense.payerId;
 
           // Calculate if this is a positive or negative transaction for the current user
           double userAmount = 0;
@@ -141,10 +170,17 @@ class BalanceOverviewWidgetState extends State<BalanceOverviewWidget> {
   Future<Map<String, dynamic>> _fetchMonthlySummary() async {
     try {
       // Get all groups the user is a member of
-      final userGroups = await _firestore
+      final userGroupsById = await _firestore
           .collection('groups')
-          .where('members', arrayContains: widget.userId)
+          .where('memberIds', arrayContains: widget.userId)
           .get();
+
+      final userGroupsByEmail = await _firestore
+          .collection('groups')
+          .where('invitedEmails', arrayContains: widget.userId)
+          .get();
+
+      final userGroups = [...userGroupsById.docs, ...userGroupsByEmail.docs];
 
       // Get current and previous month dates
       final now = DateTime.now();
@@ -157,7 +193,7 @@ class BalanceOverviewWidgetState extends State<BalanceOverviewWidget> {
       double twoMonthsAgoTotal = 0;
 
       // For each group, get expenses and calculate monthly totals
-      for (var groupDoc in userGroups.docs) {
+      for (var groupDoc in userGroups) {
         final groupId = groupDoc.id;
 
         // Get expenses for the last 3 months
@@ -255,16 +291,24 @@ class BalanceOverviewWidgetState extends State<BalanceOverviewWidget> {
     // Access theme data once
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final settingsService = Provider.of<SettingsService>(context);
+    final currencySymbol = getCurrencySymbol(settingsService.currency);
 
-    return Card(
-      elevation: 1,
-      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-      shadowColor: theme.shadowColor.withValues(alpha: 0.1),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: colorScheme.outline.withValues(alpha: 0.3),
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: colorScheme.outline.withValues(alpha: 0.1),
+          width: 1,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -295,7 +339,7 @@ class BalanceOverviewWidgetState extends State<BalanceOverviewWidget> {
                             final balance =
                                 snapshot.data ?? {'owed': 0, 'owing': 0};
                             return _buildOverallBalancePageContent(
-                                context, balance);
+                                context, balance, currencySymbol);
                           } else {
                             return const Center(child: Text('No balance data'));
                           }
@@ -315,7 +359,7 @@ class BalanceOverviewWidgetState extends State<BalanceOverviewWidget> {
                                 child: Text('Error: ${snapshot.error}'));
                           } else if (snapshot.hasData) {
                             return _buildRecentActivityPageContent(
-                                context, snapshot.data!);
+                                context, snapshot.data!, currencySymbol);
                           } else {
                             return const Center(
                                 child: Text('No activity data'));
@@ -336,7 +380,7 @@ class BalanceOverviewWidgetState extends State<BalanceOverviewWidget> {
                                 child: Text('Error: ${snapshot.error}'));
                           } else if (snapshot.hasData) {
                             return _buildMonthlySummaryPageContent(
-                                context, snapshot.data!);
+                                context, snapshot.data!, currencySymbol);
                           } else {
                             return const Center(child: Text('No summary data'));
                           }
@@ -358,8 +402,8 @@ class BalanceOverviewWidgetState extends State<BalanceOverviewWidget> {
   }
 
   // Extracted content logic for the balance page
-  Widget _buildOverallBalancePageContent(
-      BuildContext context, Map<String, double> balance) {
+  Widget _buildOverallBalancePageContent(BuildContext context,
+      Map<String, double> balance, String currencySymbol) {
     final totalOwed = balance['owed'] ?? 0;
     final totalOwing = balance['owing'] ?? 0;
     final netBalance = totalOwed - totalOwing;
@@ -408,7 +452,7 @@ class BalanceOverviewWidgetState extends State<BalanceOverviewWidget> {
                     const SizedBox(height: 6),
                     // Balance amount
                     Text(
-                      '\$${netBalance.abs().toStringAsFixed(2)}',
+                      '$currencySymbol${netBalance.abs().toStringAsFixed(2)}',
                       style: textTheme.headlineMedium?.copyWith(
                         color: balanceColor,
                         fontWeight: FontWeight.bold,
@@ -507,14 +551,14 @@ class BalanceOverviewWidgetState extends State<BalanceOverviewWidget> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    '\$${totalOwed.toStringAsFixed(2)}',
+                    '$currencySymbol${totalOwed.toStringAsFixed(2)}',
                     style: textTheme.bodySmall?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: colorScheme.tertiary,
                     ),
                   ),
                   Text(
-                    '\$${totalOwing.toStringAsFixed(2)}',
+                    '$currencySymbol${totalOwing.toStringAsFixed(2)}',
                     style: textTheme.bodySmall?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: colorScheme.error,
@@ -530,13 +574,11 @@ class BalanceOverviewWidgetState extends State<BalanceOverviewWidget> {
   }
 
   // Extracted content logic for the recent activity page
-  Widget _buildRecentActivityPageContent(
-      BuildContext context, List<Map<String, dynamic>> recentActivity) {
+  Widget _buildRecentActivityPageContent(BuildContext context,
+      List<Map<String, dynamic>> recentActivity, String currencySymbol) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
-    final settingsService =
-        Provider.of<SettingsService>(context, listen: false);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
@@ -565,7 +607,7 @@ class BalanceOverviewWidgetState extends State<BalanceOverviewWidget> {
           // Activity list
           Expanded(
             child: _buildRecentActivityList(
-                context, recentActivity, settingsService),
+                context, recentActivity, currencySymbol),
           ),
         ],
       ),
@@ -573,16 +615,13 @@ class BalanceOverviewWidgetState extends State<BalanceOverviewWidget> {
   }
 
   // Helper to build the list content or empty state for recent activity
-  Widget _buildRecentActivityList(
-      BuildContext context,
-      List<Map<String, dynamic>> activityData,
-      SettingsService settingsService) {
+  Widget _buildRecentActivityList(BuildContext context,
+      List<Map<String, dynamic>> activityData, String currencySymbol) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
     final dateFormat = DateFormat('MMM d, yyyy');
     final timeFormat = DateFormat('h:mm a');
-    final currencySymbol = settingsService.currency;
 
     if (activityData.isEmpty) {
       return Center(
@@ -612,7 +651,7 @@ class BalanceOverviewWidgetState extends State<BalanceOverviewWidget> {
       separatorBuilder: (context, index) => Divider(
         height: 1,
         thickness: 1,
-        color: colorScheme.outline.withValues(alpha: 0.3),
+        color: colorScheme.outline.withValues(alpha: 0.1),
         indent: 48, // Aligns with the content after the leading icon
       ),
       itemBuilder: (context, index) {
@@ -768,14 +807,11 @@ class BalanceOverviewWidgetState extends State<BalanceOverviewWidget> {
   }
 
   // Extracted content logic for the monthly summary page
-  Widget _buildMonthlySummaryPageContent(
-      BuildContext context, Map<String, dynamic> summaryData) {
+  Widget _buildMonthlySummaryPageContent(BuildContext context,
+      Map<String, dynamic> summaryData, String currencySymbol) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
-    final settingsService =
-        Provider.of<SettingsService>(context, listen: false);
-    final currencySymbol = settingsService.currency;
 
     // Extract data from the summary
     final thisMonthName = summaryData['thisMonthName'] as String;
@@ -1133,7 +1169,7 @@ class BalanceOverviewWidgetState extends State<BalanceOverviewWidget> {
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+        color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(radius ?? height / 2),
       ),
     );
@@ -1144,7 +1180,7 @@ class BalanceOverviewWidgetState extends State<BalanceOverviewWidget> {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+        color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(size / 4),
       ),
     );

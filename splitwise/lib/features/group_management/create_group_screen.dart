@@ -1,13 +1,13 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:splitwise/services/auth_service.dart';
 import 'package:splitwise/services/group_service.dart';
+import 'package:splitwise/widgets/common/action_bottom_bar.dart';
 import 'package:splitwise/widgets/common/animated_wrapper.dart';
-import 'package:splitwise/widgets/feedback/status_snackbar.dart';
 import 'package:splitwise/widgets/create_group/group_info_section.dart';
 import 'package:splitwise/widgets/create_group/members_section.dart';
-import 'package:splitwise/widgets/common/action_bottom_bar.dart';
+import 'package:splitwise/widgets/feedback/status_snackbar.dart';
 
 class CreateGroupScreen extends StatefulWidget {
   const CreateGroupScreen({super.key});
@@ -168,83 +168,79 @@ class CreateGroupScreenState extends State<CreateGroupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        scrolledUnderElevation: 2,
-        backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
-        centerTitle: true,
+        backgroundColor: colorScheme.surface,
         title: Text(
           'Create New Group',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.2,
-              ),
+          style: textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface,
+          ),
         ),
         leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            size: 20,
-            color: Theme.of(context).colorScheme.primary,
-          ),
+          icon: const Icon(Icons.close, size: 20),
           onPressed: () => Navigator.pop(context),
-          style: IconButton.styleFrom(
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            backgroundColor:
-                Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          ),
+          iconSize: 20,
         ),
       ),
-      body: GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            children: [
-              // Animated sections
-              AnimatedWrapper(
-                child: GroupInfoSection(
-                  nameController: _nameController,
-                  descriptionController: _descriptionController,
-                  nameValidator: (value) {
-                    if (value?.isEmpty ?? true) {
-                      return 'Please enter a group name';
-                    }
-                    return null;
-                  },
-                  descriptionValidator: (value) {
-                    if (value?.isEmpty ?? true) {
-                      return 'Please enter a description';
-                    }
-                    return null;
-                  },
-                ),
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          children: [
+            _buildAnimatedSection(
+              index: 0,
+              child: GroupInfoSection(
+                nameController: _nameController,
+                descriptionController: _descriptionController,
+                nameValidator: (value) {
+                  if (value?.isEmpty ?? true) {
+                    return 'Please enter a group name';
+                  }
+                  return null;
+                },
+                descriptionValidator: (value) {
+                  if (value?.isEmpty ?? true) {
+                    return 'Please enter a description';
+                  }
+                  return null;
+                },
               ),
-              const SizedBox(height: 16),
-              // Second animated section with delay
-              AnimatedWrapper.delayed(
-                delay: const Duration(milliseconds: 100),
-                child: MembersSection(
-                  memberEmailController: _memberEmailController,
-                  members: _members,
-                  emailFocusNode: _emailFocusNode,
-                  onAddMember: _addMember,
-                  onRemoveMember: _removeMember,
-                  onSubmitted: (_) => _addMember(),
-                ),
+            ),
+            _buildAnimatedSection(
+              index: 1,
+              child: MembersSection(
+                memberEmailController: _memberEmailController,
+                members: _members,
+                emailFocusNode: _emailFocusNode,
+                onAddMember: _addMember,
+                onRemoveMember: _removeMember,
+                onSubmitted: (_) => _addMember(),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
       bottomNavigationBar: ActionBottomBar(
         actionText: 'Create Group',
         onAction: _submit,
         isLoading: _isLoading,
+      ),
+    );
+  }
+
+  Widget _buildAnimatedSection({required int index, required Widget child}) {
+    return AnimatedWrapper.staggered(
+      index: index,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+        child: child,
       ),
     );
   }

@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:splitwise/services/auth_service.dart';
 import 'package:splitwise/services/user_service.dart';
 import 'package:splitwise/models/user.dart';
+import 'package:splitwise/widgets/common/animated_wrapper.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -13,16 +14,13 @@ class ProfileScreen extends StatefulWidget {
   ProfileScreenState createState() => ProfileScreenState();
 }
 
-class ProfileScreenState extends State<ProfileScreen>
-    with SingleTickerProviderStateMixin {
+class ProfileScreenState extends State<ProfileScreen> {
   late TextEditingController _nameController;
   late TextEditingController _usernameController;
   late TextEditingController _emailController;
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
   final UserService _userService = UserService();
   String? _profileImageUrl;
-  bool _isLoading = false;
+  bool _isLoading = true;
   bool _isUpdating = false;
   bool _hasChanges = false;
 
@@ -32,32 +30,18 @@ class ProfileScreenState extends State<ProfileScreen>
     _nameController = TextEditingController()..addListener(_checkChanges);
     _usernameController = TextEditingController()..addListener(_checkChanges);
     _emailController = TextEditingController();
-
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 600),
-      vsync: this,
-    );
-
-    _fadeAnimation = CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    );
-
     _loadUserData();
   }
 
   void _checkChanges() {
     if (!_isLoading) {
-      setState(() {
-        _hasChanges = true;
-      });
+      setState(() => _hasChanges = true);
     }
   }
 
   Future<void> _loadUserData() async {
     setState(() => _isLoading = true);
     try {
-      // Get auth service before async gap
       final authService = Provider.of<AuthService>(context, listen: false);
       final userId = authService.currentUser!.uid;
       final userData = await _userService.getUserData(userId);
@@ -71,8 +55,6 @@ class ProfileScreenState extends State<ProfileScreen>
           _isLoading = false;
           _hasChanges = false;
         });
-
-        _animationController.forward();
       }
     } catch (e) {
       if (mounted) {
@@ -84,7 +66,6 @@ class ProfileScreenState extends State<ProfileScreen>
 
   @override
   void dispose() {
-    _animationController.dispose();
     _nameController.dispose();
     _usernameController.dispose();
     _emailController.dispose();
@@ -102,7 +83,6 @@ class ProfileScreenState extends State<ProfileScreen>
       );
 
       if (image != null) {
-        // Get auth service before async gap
         // ignore: use_build_context_synchronously
         final authService = Provider.of<AuthService>(context, listen: false);
         final userId = authService.currentUser!.uid;
@@ -117,7 +97,6 @@ class ProfileScreenState extends State<ProfileScreen>
             _profileImageUrl = newImageUrl;
             _hasChanges = true;
           });
-
           _showSuccessSnackBar('Profile picture updated successfully');
         }
       }
@@ -132,31 +111,41 @@ class ProfileScreenState extends State<ProfileScreen>
     }
   }
 
+  Future<void> _updateProfile() async {
+    setState(() => _isUpdating = true);
+    try {
+      final authService = Provider.of<AuthService>(context, listen: false);
+      User updatedUser = User(
+        uid: authService.currentUser!.uid,
+        name: _nameController.text,
+        username: _usernameController.text,
+        email: _emailController.text,
+      );
+      await _userService.updateUserProfile(updatedUser);
+      if (mounted) {
+        setState(() => _hasChanges = false);
+        _showSuccessSnackBar('Profile updated successfully');
+      }
+    } catch (e) {
+      _showErrorSnackBar('Failed to update profile');
+    } finally {
+      setState(() => _isUpdating = false);
+    }
+  }
+
   void _showSuccessSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
           children: [
-            Icon(
-              Icons.check_circle_outline,
-              color: Theme.of(context).colorScheme.onTertiary,
-              size: 16,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                message,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onTertiary,
-                    ),
-              ),
-            ),
+            Icon(Icons.check_circle,
+                color: Theme.of(context).colorScheme.onPrimary),
+            const SizedBox(width: 12),
+            Expanded(child: Text(message)),
           ],
         ),
-        backgroundColor: Theme.of(context).colorScheme.tertiary,
+        backgroundColor: Theme.of(context).colorScheme.primary,
         behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.all(12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }
@@ -166,110 +155,186 @@ class ProfileScreenState extends State<ProfileScreen>
       SnackBar(
         content: Row(
           children: [
-            Icon(
-              Icons.error_outline,
-              color: Theme.of(context).colorScheme.onError,
-              size: 16,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                message,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onError,
-                    ),
-              ),
-            ),
+            Icon(Icons.error_outline,
+                color: Theme.of(context).colorScheme.onError),
+            const SizedBox(width: 12),
+            Expanded(child: Text(message)),
           ],
         ),
         backgroundColor: Theme.of(context).colorScheme.error,
         behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.all(12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }
 
-  Widget _buildProfileImage() {
-    return Stack(
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Scaffold(
+      backgroundColor: colorScheme.surface,
+      appBar: AppBar(
+        backgroundColor: colorScheme.surface,
+        elevation: 0,
+        title: Text(
+          'Profile',
+          style: textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface,
+          ),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: _isLoading
+          ? Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
+              ),
+            )
+          : ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                AnimatedWrapper.staggered(
+                  index: 0,
+                  child: _buildProfileImageCard(context),
+                ),
+                AnimatedWrapper.staggered(
+                  index: 1,
+                  child: _buildProfileFormCard(context),
+                ),
+                const SizedBox(height: 16),
+                AnimatedWrapper.staggered(
+                  index: 2,
+                  child: _buildSaveChangesButton(context),
+                ),
+              ],
+            ),
+    );
+  }
+
+  Widget _buildProfileImageCard(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Column(
       children: [
-        Container(
-          width: 100,
-          height: 100,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: Theme.of(context).colorScheme.surface,
-              width: 3,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Theme.of(context)
-                    .colorScheme
-                    .primary
-                    .withValues(alpha: 0.1),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: CircleAvatar(
-            backgroundColor: Theme.of(context).colorScheme.surface,
-            backgroundImage: _profileImageUrl != null
-                ? NetworkImage(_profileImageUrl!)
-                : null,
-            child: _profileImageUrl == null
-                ? Icon(
-                    Icons.person_outline_rounded,
-                    size: 48,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .primary
-                        .withValues(alpha: 0.5),
-                  )
-                : null,
-          ),
-        ),
-        Positioned(
-          bottom: 0,
-          right: 0,
-          child: Material(
-            color: Theme.of(context).colorScheme.primary,
-            elevation: 2,
-            shadowColor:
-                Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
-            shape: const CircleBorder(),
-            child: InkWell(
-              onTap: !_isUpdating ? _pickAndUploadImage : null,
-              customBorder: const CircleBorder(),
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                child: Icon(
-                  Icons.camera_alt_rounded,
-                  color: Theme.of(context).colorScheme.onPrimary,
-                  size: 16,
-                ),
-              ),
-            ),
-          ),
-        ),
-        if (_isUpdating)
-          Positioned.fill(
-            child: Container(
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            Container(
+              width: 120,
+              height: 120,
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.5),
                 shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                      Theme.of(context).colorScheme.onPrimary),
-                  strokeWidth: 2,
+                gradient: LinearGradient(
+                  colors: [
+                    colorScheme.primary.withValues(alpha: 0.1),
+                    colorScheme.primary.withValues(alpha: 0.02),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
               ),
             ),
-          ),
+            CircleAvatar(
+              radius: 55,
+              backgroundColor: colorScheme.surface,
+              backgroundImage: _profileImageUrl != null
+                  ? NetworkImage(_profileImageUrl!)
+                  : null,
+              child: _profileImageUrl == null
+                  ? Icon(
+                      Icons.person_outline_rounded,
+                      size: 48,
+                      color: colorScheme.primary.withValues(alpha: 0.5),
+                    )
+                  : null,
+            ),
+            Positioned(
+              bottom: 0,
+              right: 80,
+              child: Material(
+                color: colorScheme.primary,
+                elevation: 2,
+                shape: const CircleBorder(),
+                child: InkWell(
+                  onTap: !_isUpdating ? _pickAndUploadImage : null,
+                  customBorder: const CircleBorder(),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    child: Icon(
+                      Icons.camera_alt_rounded,
+                      color: colorScheme.onPrimary,
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            if (_isUpdating)
+              const Positioned.fill(
+                child: Center(
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 16),
       ],
+    );
+  }
+
+  Widget _buildProfileFormCard(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: colorScheme.outline.withValues(alpha: 0.08),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Personal Information',
+            style: textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _nameController,
+            label: 'Full Name',
+            icon: Icons.person_outline_rounded,
+          ),
+          _buildTextField(
+            controller: _usernameController,
+            label: 'Username',
+            icon: Icons.alternate_email_rounded,
+          ),
+          _buildTextField(
+            controller: _emailController,
+            label: 'Email Address',
+            icon: Icons.email_outlined,
+            readOnly: true,
+          ),
+        ],
+      ),
     );
   }
 
@@ -279,234 +344,67 @@ class ProfileScreenState extends State<ProfileScreen>
     required IconData icon,
     bool readOnly = false,
   }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: TextFormField(
+        controller: controller,
+        readOnly: readOnly,
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: textTheme.bodyMedium,
+          prefixIcon: Icon(icon, size: 20, color: colorScheme.primary),
+          filled: true,
+          fillColor: colorScheme.surfaceContainer,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
           ),
-          const SizedBox(height: 6),
-          TextFormField(
-            controller: controller,
-            readOnly: readOnly,
-            decoration: InputDecoration(
-              prefixIcon: Icon(
-                icon,
-                color: Theme.of(context).colorScheme.primary,
-                size: 18,
-              ),
-              filled: true,
-              fillColor: Theme.of(context)
-                  .colorScheme
-                  .surfaceContainerHighest
-                  .withValues(alpha: 0.1),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .outline
-                      .withValues(alpha: 0.1),
-                ),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .outline
-                      .withValues(alpha: 0.3),
-                ),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide:
-                    BorderSide(color: Theme.of(context).colorScheme.primary),
-              ),
-              contentPadding:
-                  const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(
+              color: colorScheme.outline.withValues(alpha: 0.1),
             ),
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: readOnly
-                      ? Theme.of(context).colorScheme.onSurfaceVariant
-                      : Theme.of(context).colorScheme.onSurface,
-                ),
           ),
-        ],
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
+          ),
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+        ),
+        style: textTheme.bodyMedium?.copyWith(
+          color:
+              readOnly ? colorScheme.onSurfaceVariant : colorScheme.onSurface,
+        ),
       ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        elevation: 0,
-        title: Text(
-          'Profile',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
+  Widget _buildSaveChangesButton(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return FilledButton(
+      onPressed: (_hasChanges && !_isUpdating) ? _updateProfile : null,
+      style: FilledButton.styleFrom(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+      child: _isUpdating
+          ? SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                valueColor:
+                    AlwaysStoppedAnimation<Color>(colorScheme.onPrimary),
               ),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, size: 20),
-          onPressed: () => Navigator.pop(context),
-          iconSize: 20,
-          style: IconButton.styleFrom(
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          ),
-        ),
-      ),
-      body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          SliverToBoxAdapter(
-            child: _isLoading
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                            Theme.of(context).colorScheme.primary),
-                        strokeWidth: 2.5,
-                      ),
-                    ),
-                  )
-                : FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Center(child: _buildProfileImage()),
-                          const SizedBox(height: 24),
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.surface,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .outline
-                                    .withValues(alpha: 0.3),
-                              ),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Personal Information',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleSmall
-                                      ?.copyWith(
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                ),
-                                const SizedBox(height: 16),
-                                _buildTextField(
-                                  controller: _nameController,
-                                  label: 'Full Name',
-                                  icon: Icons.person_outline_rounded,
-                                ),
-                                _buildTextField(
-                                  controller: _usernameController,
-                                  label: 'Username',
-                                  icon: Icons.alternate_email_rounded,
-                                ),
-                                _buildTextField(
-                                  controller: _emailController,
-                                  label: 'Email Address',
-                                  icon: Icons.email_outlined,
-                                  readOnly: true,
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          FilledButton(
-                            onPressed: (_hasChanges && !_isUpdating)
-                                ? () async {
-                                    setState(() => _isUpdating = true);
-                                    try {
-                                      // Get auth service before async gap
-                                      final authService =
-                                          Provider.of<AuthService>(
-                                        context,
-                                        listen: false,
-                                      );
-                                      User updatedUser = User(
-                                        uid: authService.currentUser!.uid,
-                                        name: _nameController.text,
-                                        username: _usernameController.text,
-                                        email: _emailController.text,
-                                      );
-                                      await _userService
-                                          .updateUserProfile(updatedUser);
-                                      if (mounted) {
-                                        setState(() => _hasChanges = false);
-                                        _showSuccessSnackBar(
-                                            'Profile updated successfully');
-                                      }
-                                    } catch (e) {
-                                      _showErrorSnackBar(
-                                          'Failed to update profile');
-                                    } finally {
-                                      setState(() => _isUpdating = false);
-                                    }
-                                  }
-                                : null,
-                            style: FilledButton.styleFrom(
-                              backgroundColor:
-                                  Theme.of(context).colorScheme.primary,
-                              foregroundColor:
-                                  Theme.of(context).colorScheme.onPrimary,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              disabledBackgroundColor: Theme.of(context)
-                                  .colorScheme
-                                  .primary
-                                  .withValues(alpha: 0.5),
-                            ),
-                            child: _isUpdating
-                                ? SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                          Theme.of(context)
-                                              .colorScheme
-                                              .onPrimary),
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Text(
-                                    'Save Changes',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-          ),
-        ],
-      ),
+            )
+          : const Text('Save Changes'),
     );
   }
 }

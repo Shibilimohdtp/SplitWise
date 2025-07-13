@@ -7,6 +7,7 @@ import 'package:splitwise/widgets/expence_analysis_components/user_avatar.dart';
 import 'package:splitwise/features/expense_tracking/models/expense_analysis_models.dart';
 import 'package:splitwise/widgets/common/animated_wrapper.dart';
 import 'package:splitwise/widgets/expence_analysis_components/future_content_builder.dart';
+import 'package:splitwise/utils/currency_utils.dart';
 
 class SettlementsTab extends StatefulWidget {
   final Group group;
@@ -36,62 +37,175 @@ class SettlementsTabState extends State<SettlementsTab> {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: kPadding),
-      child: Stack(
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(top: kPadding, bottom: 12),
-                child: Text('Suggested Settlements',
-                    style: textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurface,
-                        letterSpacing: 0.2)),
-              ),
-              Expanded(
-                child: FutureContentBuilder<Map<String, double>>(
-                  future:
-                      widget.expenseService.calculateBalances(widget.group.id),
-                  loadingMessage: 'Calculating settlements...',
-                  builder: (context, balances) {
-                    final settlements = calculateSettlements(balances);
-                    if (settlements.isEmpty) {
-                      return _buildAllSettledMessage(
-                          context, colorScheme, textTheme);
-                    }
-                    return ListView.builder(
-                      padding: const EdgeInsets.only(
-                          bottom: 80), // Add padding for the fixed card
-                      itemCount: settlements.length,
-                      itemBuilder: (context, index) {
-                        final settlement = settlements[index];
-                        return AnimatedWrapper.staggered(
-                          index: index,
-                          duration: const Duration(milliseconds: 300),
-                          staggerDelay: const Duration(milliseconds: 50),
-                          child: _buildSettlementListItem(
-                            context,
-                            settlement,
-                            colorScheme,
-                            textTheme,
-                          ),
-                        );
-                      },
-                    );
-                  },
-                ),
-              ),
-            ],
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: colorScheme.outline.withValues(alpha: 0.08),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
-          // Fixed position instructions card at the bottom
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 10,
-            child: _buildSettlementInstructionsCard(colorScheme, textTheme),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildHeader(
+            context,
+            colorScheme,
+            textTheme,
+            icon: Icons.handshake_outlined,
+            title: 'Suggested Settlements',
+            subtitle: 'Plan to settle debts',
+            primaryColor: colorScheme.tertiary,
+            badgeText: 'Settlements',
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: FutureContentBuilder<Map<String, double>>(
+                future:
+                    widget.expenseService.calculateBalances(widget.group.id),
+                loadingMessage: 'Calculating settlements...',
+                builder: (context, balances) {
+                  final settlements = calculateSettlements(balances);
+                  if (settlements.isEmpty) {
+                    return _buildAllSettledMessage(
+                        context, colorScheme, textTheme);
+                  }
+                  return Column(
+                    children: [
+                      Expanded(
+                        child: ListView.builder(
+                          padding: const EdgeInsets.only(
+                              bottom: 10), // Add padding for the fixed card
+                          itemCount: settlements.length,
+                          itemBuilder: (context, index) {
+                            final settlement = settlements[index];
+                            return AnimatedWrapper.staggered(
+                              index: index,
+                              duration: const Duration(milliseconds: 300),
+                              staggerDelay: const Duration(milliseconds: 50),
+                              child: _buildSettlementListItem(
+                                context,
+                                settlement,
+                                colorScheme,
+                                textTheme,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      _buildSettlementInstructionsCard(colorScheme, textTheme),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader(
+    BuildContext context,
+    ColorScheme colorScheme,
+    TextTheme textTheme, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color primaryColor,
+    required String badgeText,
+  }) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            primaryColor.withValues(alpha: 0.05),
+            primaryColor.withValues(alpha: 0.02),
+          ],
+        ),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+      ),
+      child: Row(
+        children: [
+          // Icon Container
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: primaryColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: primaryColor.withValues(alpha: 0.2),
+                width: 1,
+              ),
+            ),
+            child: Icon(
+              icon,
+              size: 20,
+              color: primaryColor,
+            ),
+          ),
+          const SizedBox(width: 12),
+
+          // Title and Subtitle
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                    letterSpacing: 0.1,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: primaryColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: primaryColor.withValues(alpha: 0.3),
+                width: 1,
+              ),
+            ),
+            child: Text(
+              badgeText,
+              style: textTheme.labelSmall?.copyWith(
+                color: primaryColor,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.2,
+              ),
+            ),
           ),
         ],
       ),
@@ -333,7 +447,7 @@ class SettlementsTabState extends State<SettlementsTab> {
         const SizedBox(height: 4), // Consistent spacing
         // Amount
         Text(
-          '${widget.settingsService.currency}${amount.toStringAsFixed(2)}',
+          '${getCurrencySymbol(widget.settingsService.currency)}${amount.toStringAsFixed(2)}',
           style: textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w700, color: colorScheme.primary),
           textAlign: TextAlign.center,
@@ -405,7 +519,7 @@ class SettlementsTabState extends State<SettlementsTab> {
                 },
               ),
               Text(
-                '${widget.settingsService.currency}${settlement.amount.toStringAsFixed(2)}',
+                '${getCurrencySymbol(widget.settingsService.currency)}${settlement.amount.toStringAsFixed(2)}',
                 textAlign: TextAlign.center,
                 style: textTheme.headlineSmall?.copyWith(
                   color: colorScheme.primary,

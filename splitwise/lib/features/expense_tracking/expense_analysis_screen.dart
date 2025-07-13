@@ -117,7 +117,7 @@ class ExpenseAnalysisScreenState extends State<ExpenseAnalysisScreen>
               ),
               indicatorSize: TabBarIndicatorSize.tab,
               dividerColor: Colors.transparent,
-              padding: const EdgeInsets.all(4),
+              padding: const EdgeInsets.all(0),
               labelPadding: const EdgeInsets.symmetric(horizontal: 8),
               splashBorderRadius: BorderRadius.circular(8),
               tabs: const [

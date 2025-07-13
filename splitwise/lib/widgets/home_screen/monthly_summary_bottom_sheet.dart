@@ -6,6 +6,9 @@ import 'package:intl/intl.dart';
 import 'dart:ui' as ui;
 import 'package:splitwise/models/expense.dart';
 import 'package:splitwise/services/settings_service.dart';
+import 'package:splitwise/utils/currency_utils.dart';
+
+// -- WIDGET REDESIGNED TO MATCH MODERN UI --
 
 /// Custom painter for the monthly trend chart with modern styling
 class MonthlyTrendChartPainter extends CustomPainter {
@@ -196,7 +199,7 @@ class MonthlySummaryBottomSheet {
     final textTheme = theme.textTheme;
     final settingsService =
         Provider.of<SettingsService>(context, listen: false);
-    final currencySymbol = settingsService.currency;
+    final currencySymbol = getCurrencySymbol(settingsService.currency);
 
     // Determine if the change is positive or negative
     final isPositiveChange = monthlyChangePercent >= 0;
@@ -215,7 +218,7 @@ class MonthlySummaryBottomSheet {
       ),
       builder: (context) {
         return DraggableScrollableSheet(
-          initialChildSize: 0.7,
+          initialChildSize: 0.8,
           minChildSize: 0.5,
           maxChildSize: 0.95,
           expand: false,
@@ -276,385 +279,28 @@ class MonthlySummaryBottomSheet {
                       controller: scrollController,
                       children: [
                         // Monthly trend section with enhanced styling
-                        _buildSectionHeader(context, 'Monthly Trend'),
-                        const SizedBox(height: 12),
-                        Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: colorScheme.surfaceContainerHighest
-                                .withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color:
-                                    colorScheme.shadow.withValues(alpha: 0.05),
-                                blurRadius: 10,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                            border: Border.all(
-                              color:
-                                  colorScheme.outline.withValues(alpha: 0.05),
-                              width: 1,
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Monthly trend chart
-                              SizedBox(
-                                height: 180,
-                                child: _buildMonthlyTrendChart(
-                                  context,
-                                  [
-                                    twoMonthsAgoTotal,
-                                    lastMonthTotal,
-                                    thisMonthTotal,
-                                  ],
-                                  currencySymbol,
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              // Enhanced month-to-month comparison
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    vertical: 12, horizontal: 16),
-                                decoration: BoxDecoration(
-                                  color: changeColor.withValues(alpha: 0.08),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: changeColor.withValues(alpha: 0.2),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'Month-to-month change:',
-                                      style: textTheme.bodyMedium?.copyWith(
-                                        color: colorScheme.onSurfaceVariant,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    Row(
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.all(6),
-                                          decoration: BoxDecoration(
-                                            color: changeColor.withValues(
-                                                alpha: 0.2),
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: Icon(
-                                            isPositiveChange
-                                                ? Icons.trending_up_rounded
-                                                : Icons.trending_down_rounded,
-                                            size: 14,
-                                            color: changeColor,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          '${isPositiveChange ? '+' : ''}${monthlyChangePercent.toStringAsFixed(1)}%',
-                                          style: textTheme.bodyMedium?.copyWith(
-                                            fontWeight: FontWeight.w700,
-                                            color: changeColor,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                        _buildMonthlyTrendSection(
+                            context,
+                            thisMonthTotal,
+                            lastMonthTotal,
+                            twoMonthsAgoTotal,
+                            monthlyChangePercent,
+                            currencySymbol,
+                            changeColor,
+                            isPositiveChange),
                         const SizedBox(height: 24),
                         // Top categories section
-                        _buildSectionHeader(context, 'Top Expense Categories'),
-                        const SizedBox(height: 12),
-                        if (topCategories.isEmpty)
-                          Container(
-                            margin: const EdgeInsets.symmetric(vertical: 16),
-                            padding: const EdgeInsets.all(24),
-                            decoration: BoxDecoration(
-                              color: colorScheme.surfaceContainerHighest
-                                  .withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color:
-                                    colorScheme.outline.withValues(alpha: 0.05),
-                                width: 1,
-                              ),
-                            ),
-                            child: Column(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    color: colorScheme.primary
-                                        .withValues(alpha: 0.05),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(
-                                    Icons.category_outlined,
-                                    size: 32,
-                                    color: colorScheme.primary
-                                        .withValues(alpha: 0.7),
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  'No category data available',
-                                  style: textTheme.titleSmall?.copyWith(
-                                    color: colorScheme.onSurface,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Start adding expenses to see your spending patterns',
-                                  textAlign: TextAlign.center,
-                                  style: textTheme.bodySmall?.copyWith(
-                                    color: colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        else
-                          ListView.separated(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: topCategories.length,
-                            separatorBuilder: (context, index) =>
-                                const Divider(height: 1),
-                            itemBuilder: (context, index) {
-                              final category = topCategories[index];
-                              final categoryName = category['name'] as String;
-                              final categoryAmount =
-                                  category['amount'] as double;
-                              final categoryPercentage =
-                                  category['percentage'] as double;
-
-                              // Determine icon based on category
-                              IconData categoryIcon;
-                              switch (categoryName.toLowerCase()) {
-                                case 'food':
-                                case 'groceries':
-                                case 'dining':
-                                case 'restaurant':
-                                  categoryIcon = Icons.restaurant_outlined;
-                                  break;
-                                case 'transportation':
-                                case 'travel':
-                                  categoryIcon = Icons.directions_car_outlined;
-                                  break;
-                                case 'entertainment':
-                                case 'movie':
-                                  categoryIcon = Icons.movie_outlined;
-                                  break;
-                                case 'shopping':
-                                  categoryIcon = Icons.shopping_bag_outlined;
-                                  break;
-                                case 'utilities':
-                                case 'bills':
-                                  categoryIcon = Icons.receipt_outlined;
-                                  break;
-                                case 'settlement':
-                                  categoryIcon =
-                                      Icons.account_balance_wallet_outlined;
-                                  break;
-                                default:
-                                  categoryIcon = Icons.category_outlined;
-                              }
-
-                              // Enhanced category item with modern styling
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    vertical: 14, horizontal: 4),
-                                child: Row(
-                                  children: [
-                                    // Enhanced category icon with gradient
-                                    Container(
-                                      width: 44,
-                                      height: 44,
-                                      decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          colors: [
-                                            colorScheme.primary
-                                                .withValues(alpha: 0.15),
-                                            colorScheme.primary
-                                                .withValues(alpha: 0.05),
-                                          ],
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                        ),
-                                        shape: BoxShape.circle,
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: colorScheme.shadow
-                                                .withValues(alpha: 0.05),
-                                            blurRadius: 4,
-                                            offset: const Offset(0, 2),
-                                          ),
-                                        ],
-                                      ),
-                                      child: Icon(
-                                        categoryIcon,
-                                        color: colorScheme.primary,
-                                        size: 20,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    // Category details with improved typography
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            categoryName,
-                                            style:
-                                                textTheme.bodyMedium?.copyWith(
-                                              fontWeight: FontWeight.w600,
-                                              letterSpacing: 0.1,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 8),
-                                          // Enhanced progress bar
-                                          Stack(
-                                            children: [
-                                              // Background with rounded corners
-                                              Container(
-                                                height: 6,
-                                                width: double.infinity,
-                                                decoration: BoxDecoration(
-                                                  color: colorScheme.outline
-                                                      .withValues(alpha: 0.1),
-                                                  borderRadius:
-                                                      BorderRadius.circular(3),
-                                                ),
-                                              ),
-                                              // Foreground with gradient
-                                              FractionallySizedBox(
-                                                widthFactor:
-                                                    categoryPercentage / 100,
-                                                child: Container(
-                                                  height: 6,
-                                                  decoration: BoxDecoration(
-                                                    gradient: LinearGradient(
-                                                      colors: [
-                                                        colorScheme.primary,
-                                                        colorScheme.primary
-                                                            .withValues(
-                                                                alpha: 0.8),
-                                                      ],
-                                                    ),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            3),
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    // Amount and percentage with improved styling
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.end,
-                                      children: [
-                                        Text(
-                                          '$currencySymbol${categoryAmount.abs().toStringAsFixed(2)}',
-                                          style: textTheme.bodyMedium?.copyWith(
-                                            fontWeight: FontWeight.w700,
-                                            color: colorScheme.onSurface,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 6, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: colorScheme.primary
-                                                .withValues(alpha: 0.1),
-                                            borderRadius:
-                                                BorderRadius.circular(4),
-                                          ),
-                                          child: Text(
-                                            '${categoryPercentage.toStringAsFixed(1)}%',
-                                            style:
-                                                textTheme.bodySmall?.copyWith(
-                                              color: colorScheme.primary,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
+                        _buildTopCategoriesSection(
+                            context, topCategories, currencySymbol),
                         const SizedBox(height: 24),
                         // Summary section with enhanced styling
-                        _buildSectionHeader(context, 'Summary'),
-                        const SizedBox(height: 12),
-                        Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: colorScheme.surfaceContainerHighest
-                                .withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color:
-                                    colorScheme.shadow.withValues(alpha: 0.05),
-                                blurRadius: 10,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                            border: Border.all(
-                              color:
-                                  colorScheme.outline.withValues(alpha: 0.05),
-                              width: 1,
-                            ),
-                          ),
-                          child: Column(
-                            children: [
-                              _buildSummaryRow(
-                                context,
-                                'Total Expenses This Month:',
-                                '$currencySymbol${thisMonthTotal.abs().toStringAsFixed(2)}',
-                                Icons.account_balance_wallet_outlined,
-                              ),
-                              const SizedBox(height: 12),
-                              _buildSummaryRow(
-                                context,
-                                'Average Daily Expense:',
-                                '$currencySymbol${(thisMonthTotal.abs() / 30).toStringAsFixed(2)}',
-                                Icons.calendar_today_outlined,
-                              ),
-                              const SizedBox(height: 12),
-                              _buildSummaryRow(
-                                context,
-                                'Month-to-Month Change:',
-                                '${isPositiveChange ? '+' : ''}${monthlyChangePercent.toStringAsFixed(1)}%',
-                                isPositiveChange
-                                    ? Icons.trending_up_rounded
-                                    : Icons.trending_down_rounded,
-                                valueColor: changeColor,
-                              ),
-                            ],
-                          ),
-                        ),
+                        _buildSummarySection(
+                            context,
+                            thisMonthTotal,
+                            monthlyChangePercent,
+                            currencySymbol,
+                            changeColor,
+                            isPositiveChange),
                       ],
                     ),
                   ),
@@ -667,39 +313,478 @@ class MonthlySummaryBottomSheet {
     );
   }
 
-  /// Helper method to build modern section headers
-  static Widget _buildSectionHeader(BuildContext context, String title) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final textTheme = theme.textTheme;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Row(
+  static Widget _buildMonthlyTrendSection(
+      BuildContext context,
+      double thisMonthTotal,
+      double lastMonthTotal,
+      double twoMonthsAgoTotal,
+      double monthlyChangePercent,
+      String currencySymbol,
+      Color changeColor,
+      bool isPositiveChange) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: colorScheme.outline.withValues(alpha: 0.1),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
         children: [
-          // Modern section title with better typography
-          Text(
-            title,
-            style: textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: colorScheme.onSurface,
-              letterSpacing: 0.1,
+          _buildHeader(
+            context,
+            colorScheme,
+            textTheme,
+            icon: Icons.trending_up_rounded,
+            title: 'Monthly Trend',
+            subtitle: 'Your spending over the last 3 months',
+            primaryColor: colorScheme.primary,
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Monthly trend chart
+                SizedBox(
+                  height: 180,
+                  child: _buildMonthlyTrendChart(
+                    context,
+                    [
+                      twoMonthsAgoTotal,
+                      lastMonthTotal,
+                      thisMonthTotal,
+                    ],
+                    currencySymbol,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Enhanced month-to-month comparison
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: changeColor.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: changeColor.withValues(alpha: 0.2),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Month-to-month change:',
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: changeColor.withValues(alpha: 0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              isPositiveChange
+                                  ? Icons.trending_up_rounded
+                                  : Icons.trending_down_rounded,
+                              size: 14,
+                              color: changeColor,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${isPositiveChange ? '+' : ''}${monthlyChangePercent.toStringAsFixed(1)}%',
+                            style: textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: changeColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(width: 12),
-          // Gradient divider for visual interest
-          Expanded(
-            child: Container(
-              height: 1.5,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    colorScheme.primary.withValues(alpha: 0.5),
-                    colorScheme.outline.withValues(alpha: 0.05),
+        ],
+      ),
+    );
+  }
+
+  static Widget _buildTopCategoriesSection(BuildContext context,
+      List<Map<String, dynamic>> topCategories, String currencySymbol) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: colorScheme.outline.withValues(alpha: 0.1),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          _buildHeader(
+            context,
+            colorScheme,
+            textTheme,
+            icon: Icons.category_rounded,
+            title: 'Top Categories',
+            subtitle: 'Your main spending areas this month',
+            primaryColor: colorScheme.secondary,
+          ),
+          if (topCategories.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Center(
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.category_outlined,
+                      size: 40,
+                      color:
+                          colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No category data available',
+                      style: textTheme.titleSmall,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Start adding expenses to see your spending patterns',
+                      textAlign: TextAlign.center,
+                      style: textTheme.bodySmall
+                          ?.copyWith(color: colorScheme.onSurfaceVariant),
+                    ),
                   ],
                 ),
-                borderRadius: BorderRadius.circular(1),
               ),
+            )
+          else
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: topCategories.length,
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              separatorBuilder: (context, index) => Divider(
+                height: 1,
+                indent: 20,
+                endIndent: 20,
+                color: colorScheme.outline.withValues(alpha: 0.1),
+              ),
+              itemBuilder: (context, index) {
+                final category = topCategories[index];
+                final categoryName = category['name'] as String;
+                final categoryAmount = category['amount'] as double;
+                final categoryPercentage = category['percentage'] as double;
+
+                // Determine icon based on category
+                IconData categoryIcon;
+                switch (categoryName.toLowerCase()) {
+                  case 'food':
+                  case 'groceries':
+                  case 'dining':
+                  case 'restaurant':
+                    categoryIcon = Icons.restaurant_outlined;
+                    break;
+                  case 'transportation':
+                  case 'travel':
+                    categoryIcon = Icons.directions_car_outlined;
+                    break;
+                  case 'entertainment':
+                  case 'movie':
+                    categoryIcon = Icons.movie_outlined;
+                    break;
+                  case 'shopping':
+                    categoryIcon = Icons.shopping_bag_outlined;
+                    break;
+                  case 'utilities':
+                  case 'bills':
+                    categoryIcon = Icons.receipt_outlined;
+                    break;
+                  case 'settlement':
+                    categoryIcon = Icons.account_balance_wallet_outlined;
+                    break;
+                  default:
+                    categoryIcon = Icons.category_outlined;
+                }
+
+                // Enhanced category item with modern styling
+                return Padding(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+                  child: Row(
+                    children: [
+                      // Enhanced category icon with gradient
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              colorScheme.secondary.withValues(alpha: 0.15),
+                              colorScheme.secondary.withValues(alpha: 0.05),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          categoryIcon,
+                          color: colorScheme.secondary,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      // Category details with improved typography
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              categoryName,
+                              style: textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.1,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            // Enhanced progress bar
+                            Stack(
+                              children: [
+                                // Background with rounded corners
+                                Container(
+                                  height: 6,
+                                  width: double.infinity,
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.outline
+                                        .withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(3),
+                                  ),
+                                ),
+                                // Foreground with gradient
+                                FractionallySizedBox(
+                                  widthFactor: categoryPercentage / 100,
+                                  child: Container(
+                                    height: 6,
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          colorScheme.secondary,
+                                          colorScheme.secondary
+                                              .withValues(alpha: 0.8),
+                                        ],
+                                      ),
+                                      borderRadius: BorderRadius.circular(3),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      // Amount and percentage with improved styling
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            '$currencySymbol${categoryAmount.abs().toStringAsFixed(2)}',
+                            style: textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color:
+                                  colorScheme.secondary.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              '${categoryPercentage.toStringAsFixed(1)}%',
+                              style: textTheme.bodySmall?.copyWith(
+                                color: colorScheme.secondary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+  static Widget _buildSummarySection(
+      BuildContext context,
+      double thisMonthTotal,
+      double monthlyChangePercent,
+      String currencySymbol,
+      Color changeColor,
+      bool isPositiveChange) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: colorScheme.outline.withValues(alpha: 0.1),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          _buildHeader(
+            context,
+            colorScheme,
+            textTheme,
+            icon: Icons.summarize_rounded,
+            title: 'Summary',
+            subtitle: 'A quick overview of your finances',
+            primaryColor: colorScheme.tertiary,
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                _buildSummaryRow(
+                  context,
+                  'Total Expenses This Month:',
+                  '$currencySymbol${thisMonthTotal.abs().toStringAsFixed(2)}',
+                  Icons.account_balance_wallet_outlined,
+                ),
+                const Divider(height: 24),
+                _buildSummaryRow(
+                  context,
+                  'Average Daily Expense:',
+                  '$currencySymbol${(thisMonthTotal.abs() / 30).toStringAsFixed(2)}',
+                  Icons.calendar_today_outlined,
+                ),
+                const Divider(height: 24),
+                _buildSummaryRow(
+                  context,
+                  'Month-to-Month Change:',
+                  '${isPositiveChange ? '+' : ''}${monthlyChangePercent.toStringAsFixed(1)}%',
+                  isPositiveChange
+                      ? Icons.trending_up_rounded
+                      : Icons.trending_down_rounded,
+                  valueColor: changeColor,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Helper method to build modern section headers
+  static Widget _buildHeader(
+    BuildContext context,
+    ColorScheme colorScheme,
+    TextTheme textTheme, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color primaryColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            primaryColor.withValues(alpha: 0.05),
+            primaryColor.withValues(alpha: 0.02),
+          ],
+        ),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: primaryColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: primaryColor.withValues(alpha: 0.2),
+                width: 1,
+              ),
+            ),
+            child: Icon(icon, size: 20, color: primaryColor),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -723,17 +808,10 @@ class MonthlySummaryBottomSheet {
           // Label with enhanced icon
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: colorScheme.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  icon,
-                  size: 16,
-                  color: colorScheme.primary,
-                ),
+              Icon(
+                icon,
+                size: 20,
+                color: colorScheme.onSurfaceVariant,
               ),
               const SizedBox(width: 12),
               Text(
@@ -746,18 +824,11 @@ class MonthlySummaryBottomSheet {
             ],
           ),
           // Value with enhanced styling
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: (valueColor ?? colorScheme.primary).withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              value,
-              style: textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: valueColor ?? colorScheme.onSurface,
-              ),
+          Text(
+            value,
+            style: textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: valueColor ?? colorScheme.onSurface,
             ),
           ),
         ],

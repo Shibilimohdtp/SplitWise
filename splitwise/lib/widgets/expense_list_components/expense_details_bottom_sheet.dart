@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:splitwise/models/expense.dart';
 import 'package:splitwise/services/settings_service.dart';
 import 'package:splitwise/services/user_service.dart';
+import 'package:splitwise/utils/currency_utils.dart';
 
 class ExpenseDetailsBottomSheet extends StatelessWidget {
   final Expense expense;
@@ -22,44 +23,58 @@ class ExpenseDetailsBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        color: colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: DraggableScrollableSheet(
-        initialChildSize: 0.6,
+        initialChildSize: 0.7,
         minChildSize: 0.5,
         maxChildSize: 0.95,
         expand: false,
         builder: (context, scrollController) {
           return Column(
             children: [
-              _buildBottomSheetHandle(context),
+              _buildHandle(context),
               Expanded(
-                child: SingleChildScrollView(
+                child: ListView(
                   controller: scrollController,
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildExpenseHeader(context),
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                  children: [
+                    _buildHeader(context),
+                    const SizedBox(height: 24),
+                    _buildSection(
+                      context,
+                      icon: Icons.info_outline_rounded,
+                      title: 'Expense Info',
+                      child: _buildExpenseInfo(context),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildSection(
+                      context,
+                      icon: Icons.people_alt_rounded,
+                      title: 'Split Details',
+                      child: _buildSplitDetails(context),
+                    ),
+                    if (expense.comment?.isNotEmpty ?? false) ...[
                       const SizedBox(height: 16),
-                      _buildExpenseInfo(context),
-                      if (expense.comment?.isNotEmpty ?? false) ...[
-                        const SizedBox(height: 24),
-                        _buildCommentSection(context),
-                      ],
-                      const SizedBox(height: 24),
-                      _buildSplitDetails(context),
-                      if (expense.receiptUrl != null) ...[
-                        const SizedBox(height: 24),
-                        _buildReceiptButton(context),
-                      ],
-                      const SizedBox(height: 32),
-                      _buildActionButtons(context),
+                      _buildSection(
+                        context,
+                        icon: Icons.comment_rounded,
+                        title: 'Comment',
+                        child: _buildCommentSection(context),
+                      ),
                     ],
-                  ),
+                    if (expense.receiptUrl != null) ...[
+                      const SizedBox(height: 16),
+                      _buildReceiptButton(context),
+                    ],
+                    const SizedBox(height: 32),
+                    _buildActionButtons(context),
+                  ],
                 ),
               ),
             ],
@@ -69,103 +84,157 @@ class ExpenseDetailsBottomSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildBottomSheetHandle(BuildContext context) {
+  Widget _buildHandle(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      width: 36,
-      height: 4,
+      margin: const EdgeInsets.symmetric(vertical: 12),
+      width: 40,
+      height: 5,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(2),
+        color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(2.5),
       ),
     );
   }
 
-  Widget _buildExpenseHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+    final categoryColor = _getCategoryColor(expense.category);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Expense Details',
+              style: textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: categoryColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: categoryColor.withValues(alpha: 0.3)),
+              ),
+              child: Text(
+                expense.category,
+                style: textTheme.labelSmall?.copyWith(
+                  color: categoryColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Text(
+          expense.description,
+          style: textTheme.titleMedium?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                colorScheme.primary.withValues(alpha: 0.05),
+                colorScheme.primary.withValues(alpha: 0.1),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border:
+                Border.all(color: colorScheme.primary.withValues(alpha: 0.2)),
+          ),
+          child: Column(
+            children: [
+              Text(
+                'Total Amount',
+                style: textTheme.bodyMedium
+                    ?.copyWith(color: colorScheme.onSurfaceVariant),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '${getCurrencySymbol(settingsService.currency)}${expense.amount.toStringAsFixed(2)}',
+                style: textTheme.displaySmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.primary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSection(BuildContext context,
+      {required IconData icon, required String title, required Widget child}) {
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            Expanded(
-              child: Text(
-                expense.description,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color:
-                    _getCategoryColor(expense.category).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                expense.category,
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: _getCategoryColor(expense.category),
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
+            Icon(icon, size: 18, color: colorScheme.onSurfaceVariant),
+            const SizedBox(width: 8),
+            Text(
+              title,
+              style:
+                  textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
             ),
           ],
         ),
-        const SizedBox(height: 8),
-        Text(
-          '${settingsService.currency}${expense.amount.toStringAsFixed(2)}',
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.primary,
-              ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainer,
+            borderRadius: BorderRadius.circular(16),
+            border:
+                Border.all(color: colorScheme.outline.withValues(alpha: 0.1)),
+          ),
+          child: child,
         ),
       ],
     );
   }
 
   Widget _buildExpenseInfo(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+    return Column(
+      children: [
+        _buildInfoRow(
+          context: context,
+          icon: Icons.person_rounded,
+          label: 'Paid by',
+          value: creatorName,
         ),
-      ),
-      child: Column(
-        children: [
-          _buildInfoRow(
-            context: context,
-            icon: Icons.person_outline,
-            label: 'Paid by',
-            value: creatorName,
-          ),
-          Divider(
-            height: 20,
-            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
-          ),
-          _buildInfoRow(
-            context: context,
-            icon: Icons.calendar_today_outlined,
-            label: 'Date',
-            value: DateFormat('MMMM d, yyyy').format(expense.date),
-          ),
-          Divider(
-            height: 20,
-            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
-          ),
-          _buildInfoRow(
-            context: context,
-            icon: Icons.category_outlined,
-            label: 'Category',
-            value: expense.category,
-            valueColor: _getCategoryColor(expense.category),
-          ),
-        ],
-      ),
+        const Divider(height: 16),
+        _buildInfoRow(
+          context: context,
+          icon: Icons.calendar_today_rounded,
+          label: 'Date',
+          value: DateFormat('MMMM d, yyyy').format(expense.date),
+        ),
+        const Divider(height: 16),
+        _buildInfoRow(
+          context: context,
+          icon: Icons.call_split_rounded,
+          label: 'Split Method',
+          value: expense.splitMethod,
+        ),
+      ],
     );
   }
 
@@ -174,142 +243,60 @@ class ExpenseDetailsBottomSheet extends StatelessWidget {
     required IconData icon,
     required String label,
     required String value,
-    Color? valueColor,
   }) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Icon(icon,
-              color: Theme.of(context).colorScheme.primary, size: 16),
-        ),
-        const SizedBox(width: 10),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-            ),
-            Text(
-              value,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color:
-                        valueColor ?? Theme.of(context).colorScheme.onSurface,
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
 
-  Widget _buildCommentSection(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
         children: [
-          Row(
-            children: [
-              Icon(
-                Icons.comment_outlined,
-                size: 14,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                'Comment',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
+          Icon(icon, color: colorScheme.onSurfaceVariant, size: 20),
+          const SizedBox(width: 12),
+          Text(label, style: textTheme.bodyMedium),
+          const Spacer(),
           Text(
-            expense.comment!,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  height: 1.4,
-                ),
+            value,
+            style: textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurface,
+            ),
           ),
         ],
       ),
     );
   }
 
+  Widget _buildCommentSection(BuildContext context) {
+    return Text(
+      expense.comment!,
+      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            height: 1.5,
+          ),
+    );
+  }
+
   Widget _buildSplitDetails(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(
-              Icons.people_outline,
-              size: 16,
-              color: Theme.of(context).colorScheme.primary,
+    return FutureBuilder<List<Widget>>(
+      future: _buildSplitDetailsList(context),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: CircularProgressIndicator(strokeWidth: 2.5),
             ),
-            const SizedBox(width: 6),
-            Text(
-              'Split Details',
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerLowest,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color:
-                  Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
-            ),
-          ),
-          child: FutureBuilder<List<Widget>>(
-            future: _buildSplitDetailsList(context),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return Center(
-                  child: CircularProgressIndicator(
-                    color: Theme.of(context).colorScheme.primary,
-                    strokeWidth: 2.5,
-                  ),
-                );
-              }
-              return Column(children: snapshot.data ?? []);
-            },
-          ),
-        ),
-      ],
+          );
+        }
+        return Column(children: snapshot.data ?? []);
+      },
     );
   }
 
   Future<List<Widget>> _buildSplitDetailsList(BuildContext context) async {
-    // Capture theme values before async operations
-    final outlineColor =
-        Theme.of(context).colorScheme.outline.withValues(alpha: 0.3);
-    final textStyle = Theme.of(context).textTheme.bodyMedium;
-    final onSurfaceColor = Theme.of(context).colorScheme.onSurface;
-    final primaryColor = Theme.of(context).colorScheme.primary;
-
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
     List<Widget> widgets = [];
     final entries = expense.splitDetails.entries.toList();
 
@@ -321,95 +308,98 @@ class ExpenseDetailsBottomSheet extends StatelessWidget {
           isInvited ? entry.key : await userService.getUserName(entry.key);
 
       widgets.add(
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            border: isLastItem
-                ? null
-                : Border(
-                    bottom: BorderSide(
-                      color: outlineColor,
-                      width: 1,
-                    ),
-                  ),
-          ),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                userName,
-                style: textStyle?.copyWith(
-                  color: onSurfaceColor,
+              CircleAvatar(
+                radius: 16,
+                backgroundColor: colorScheme.primary.withValues(alpha: 0.1),
+                child: Text(
+                  userName.isNotEmpty ? userName[0].toUpperCase() : '?',
+                  style: textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.primary,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  userName,
+                  style: textTheme.bodyMedium,
                 ),
               ),
               Text(
-                '${settingsService.currency}${entry.value.toStringAsFixed(2)}',
-                style: TextStyle(
-                  color: primaryColor,
-                  fontSize: 14,
+                '${getCurrencySymbol(settingsService.currency)}${entry.value.toStringAsFixed(2)}',
+                style: textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w600,
+                  color: colorScheme.primary,
                 ),
               ),
             ],
           ),
         ),
       );
+      if (!isLastItem) {
+        widgets.add(const Divider(height: 1));
+      }
     }
     return widgets;
   }
 
   Widget _buildReceiptButton(BuildContext context) {
-    return FilledButton.icon(
-      onPressed: () => _viewReceipt(context),
-      icon: const Icon(Icons.receipt_outlined, size: 18),
-      label: const Text('View Receipt'),
-      style: FilledButton.styleFrom(
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Theme.of(context).colorScheme.onPrimary,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
+    return Center(
+      child: OutlinedButton.icon(
+        onPressed: () => _viewReceipt(context),
+        icon: const Icon(Icons.receipt_long_rounded, size: 18),
+        label: const Text('View Receipt'),
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
-        textStyle: const TextStyle(fontSize: 14),
       ),
     );
   }
 
   Widget _buildActionButtons(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Row(
       children: [
         Expanded(
           child: OutlinedButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.of(context).pop(),
             style: OutlinedButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.onSurface,
-              side: BorderSide(color: Theme.of(context).colorScheme.outline),
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(12),
               ),
-              textStyle: const TextStyle(fontSize: 14),
+              side:
+                  BorderSide(color: colorScheme.outline.withValues(alpha: 0.5)),
             ),
             child: const Text('Close'),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 12),
         Expanded(
-          child: FilledButton(
+          child: FilledButton.icon(
             onPressed: () {
               Navigator.pop(context);
               onDeleteExpense(expense.id);
             },
+            icon: const Icon(Icons.delete_outline_rounded, size: 18),
+            label: const Text('Delete'),
             style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-              foregroundColor: Theme.of(context).colorScheme.onError,
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              backgroundColor: colorScheme.error,
+              foregroundColor: colorScheme.onError,
+              padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(12),
               ),
-              textStyle: const TextStyle(fontSize: 14),
             ),
-            child: const Text('Delete'),
           ),
         ),
       ],
@@ -429,55 +419,29 @@ class ExpenseDetailsBottomSheet extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.receipt_outlined,
-                        size: 16,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Receipt',
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                      ),
-                    ],
+                  Text(
+                    'Receipt',
+                    style: Theme.of(context).textTheme.titleLarge,
                   ),
                   IconButton(
-                    icon: Icon(
-                      Icons.close,
-                      size: 20,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                    style: IconButton.styleFrom(
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      minimumSize: const Size(36, 36),
-                    ),
+                    icon: const Icon(Icons.close),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
               ),
             ),
-            Container(
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height * 0.6,
-              ),
-              child: ClipRRect(
-                borderRadius:
-                    const BorderRadius.vertical(bottom: Radius.circular(16)),
-                child: Image.network(
-                  expense.receiptUrl!,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) => Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Text(
-                      'Failed to load receipt image',
-                      style:
-                          TextStyle(color: Theme.of(context).colorScheme.error),
-                    ),
+            ClipRRect(
+              borderRadius:
+                  const BorderRadius.vertical(bottom: Radius.circular(16)),
+              child: Image.network(
+                expense.receiptUrl!,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) => Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    'Failed to load receipt image',
+                    style:
+                        TextStyle(color: Theme.of(context).colorScheme.error),
                   ),
                 ),
               ),
@@ -491,17 +455,17 @@ class ExpenseDetailsBottomSheet extends StatelessWidget {
   Color _getCategoryColor(String category) {
     switch (category.toLowerCase()) {
       case 'food':
-        return const Color(0xFF4CAF50);
+        return Colors.green;
       case 'transport':
-        return const Color(0xFF2196F3);
+        return Colors.blue;
       case 'entertainment':
-        return const Color(0xFF9C27B0);
+        return Colors.purple;
       case 'utilities':
-        return const Color(0xFFFF9800);
+        return Colors.orange;
       case 'rent':
-        return const Color(0xFF795548);
+        return Colors.brown;
       default:
-        return const Color(0xFF607D8B);
+        return Colors.grey;
     }
   }
 }

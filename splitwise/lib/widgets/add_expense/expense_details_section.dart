@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:splitwise/services/settings_service.dart';
-import 'package:splitwise/widgets/form/section_card.dart';
-import 'package:splitwise/widgets/form/section_header.dart';
+import 'package:splitwise/utils/currency_utils.dart';
 
 class ExpenseDetailsSection extends StatefulWidget {
   final TextEditingController descriptionController;
@@ -27,40 +26,165 @@ class ExpenseDetailsSection extends StatefulWidget {
 class _ExpenseDetailsSectionState extends State<ExpenseDetailsSection> {
   @override
   Widget build(BuildContext context) {
-    return SectionCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SectionHeader(
-            title: 'Expense Details',
-            icon: Icons.receipt_outlined,
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: colorScheme.outline.withValues(alpha: 0.08),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
-          const SizedBox(height: 12),
-          _buildDescriptionField(),
-          const SizedBox(height: 16),
-          _buildAmountField(),
-          const SizedBox(height: 16),
-          _buildCategorySelector(),
+        ],
+      ),
+      child: Column(
+        children: [
+          _buildHeader(
+            context,
+            colorScheme,
+            textTheme,
+            icon: Icons.receipt_long_rounded,
+            title: 'Expense Details',
+            subtitle: 'Describe the expense and amount',
+            primaryColor: colorScheme.primary,
+            badgeText: 'Core Info',
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                _buildDescriptionField(),
+                const SizedBox(height: 16),
+                _buildAmountField(),
+                const SizedBox(height: 16),
+                _buildCategorySelector(),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader(
+    BuildContext context,
+    ColorScheme colorScheme,
+    TextTheme textTheme, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color primaryColor,
+    required String badgeText,
+  }) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            primaryColor.withValues(alpha: 0.05),
+            primaryColor.withValues(alpha: 0.02),
+          ],
+        ),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: primaryColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: primaryColor.withValues(alpha: 0.2),
+                width: 1,
+              ),
+            ),
+            child: Icon(icon, size: 20, color: primaryColor),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: primaryColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: primaryColor.withValues(alpha: 0.3),
+                width: 1,
+              ),
+            ),
+            child: Text(
+              badgeText,
+              style: textTheme.labelSmall?.copyWith(
+                color: primaryColor,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildDescriptionField() {
+    final colorScheme = Theme.of(context).colorScheme;
     return TextFormField(
       controller: widget.descriptionController,
       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
+            color: colorScheme.onSurface,
           ),
       decoration: InputDecoration(
         filled: true,
-        fillColor: Theme.of(context)
-            .colorScheme
-            .surfaceContainerHighest
-            .withValues(alpha: 0.05),
+        fillColor: colorScheme.surfaceContainer,
         labelText: 'Description',
         hintText: 'What was this expense for?',
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+            color: colorScheme.outline.withValues(alpha: 0.1),
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
+        ),
         contentPadding:
             const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
       ),
@@ -71,68 +195,69 @@ class _ExpenseDetailsSectionState extends State<ExpenseDetailsSection> {
 
   Widget _buildAmountField() {
     final currency = context.read<SettingsService>().currency;
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(12),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            colorScheme.primary.withValues(alpha: 0.03),
+            colorScheme.primary.withValues(alpha: 0.08),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+          color: colorScheme.primary.withValues(alpha: 0.1),
+          width: 1,
         ),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Text(
-            'Amount',
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
-                ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: colorScheme.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: colorScheme.primary.withValues(alpha: 0.2),
+              ),
+            ),
+            child: Text(
+              getCurrencySymbol(currency),
+              style: textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: colorScheme.primary,
+              ),
+            ),
           ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                decoration: BoxDecoration(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .primary
-                      .withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  currency,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: TextFormField(
+              controller: widget.amountController,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              style: textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextFormField(
-                  controller: widget.amountController,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                  decoration: const InputDecoration(
-                    border: InputBorder.none,
-                    hintText: '0.00',
-                    contentPadding:
-                        EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                    isDense: true,
-                  ),
-                  validator: (value) =>
-                      value!.isEmpty ? 'Please enter an amount' : null,
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                hintText: '0.00',
+                hintStyle: textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                 ),
+                contentPadding:
+                    const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                isDense: true,
               ),
-            ],
+              validator: (value) =>
+                  value!.isEmpty ? 'Please enter an amount' : null,
+            ),
           ),
         ],
       ),
@@ -140,14 +265,15 @@ class _ExpenseDetailsSectionState extends State<ExpenseDetailsSection> {
   }
 
   Widget _buildCategorySelector() {
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Category',
-          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
+          style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 12),
         SizedBox(
@@ -159,28 +285,25 @@ class _ExpenseDetailsSectionState extends State<ExpenseDetailsSection> {
             itemBuilder: (context, index) {
               final category = widget.categories[index];
               final isSelected = widget.selectedCategory == category;
+              final categoryColor = _getCategoryColor(category);
 
               return GestureDetector(
                 onTap: () => widget.onCategorySelected(category),
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeInOut,
                   width: 80,
-                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? _getCategoryColor(category).withValues(alpha: 0.2)
-                        : Theme.of(context)
-                            .colorScheme
-                            .surfaceContainerHighest
-                            .withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
+                        ? categoryColor.withValues(alpha: 0.1)
+                        : colorScheme.surfaceContainer,
+                    borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: isSelected
-                          ? _getCategoryColor(category)
-                          : Theme.of(context)
-                              .colorScheme
-                              .outline
-                              .withValues(alpha: 0.1),
+                          ? categoryColor.withValues(alpha: 0.5)
+                          : colorScheme.outline.withValues(alpha: 0.1),
                       width: isSelected ? 1.5 : 1,
                     ),
                   ),
@@ -191,32 +314,28 @@ class _ExpenseDetailsSectionState extends State<ExpenseDetailsSection> {
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? _getCategoryColor(category)
-                                  .withValues(alpha: 0.1)
-                              : Theme.of(context).colorScheme.surface,
+                              ? categoryColor.withValues(alpha: 0.2)
+                              : Colors.transparent,
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
                           _getCategoryIcon(category),
                           color: isSelected
-                              ? _getCategoryColor(category)
-                              : Theme.of(context).colorScheme.onSurfaceVariant,
+                              ? categoryColor
+                              : colorScheme.onSurfaceVariant,
                           size: 24,
                         ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         category,
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              fontWeight: isSelected
-                                  ? FontWeight.w600
-                                  : FontWeight.normal,
-                              color: isSelected
-                                  ? _getCategoryColor(category)
-                                  : Theme.of(context)
-                                      .colorScheme
-                                      .onSurfaceVariant,
-                            ),
+                        style: textTheme.labelSmall?.copyWith(
+                          fontWeight:
+                              isSelected ? FontWeight.w600 : FontWeight.normal,
+                          color: isSelected
+                              ? categoryColor
+                              : colorScheme.onSurfaceVariant,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.center,
@@ -235,38 +354,38 @@ class _ExpenseDetailsSectionState extends State<ExpenseDetailsSection> {
   IconData _getCategoryIcon(String category) {
     switch (category.toLowerCase()) {
       case 'food':
-        return Icons.restaurant;
+        return Icons.restaurant_rounded;
       case 'transport':
-        return Icons.directions_car;
+        return Icons.directions_car_rounded;
       case 'entertainment':
-        return Icons.movie;
+        return Icons.movie_rounded;
       case 'utilities':
-        return Icons.power;
+        return Icons.power_rounded;
       case 'rent':
-        return Icons.home;
+        return Icons.home_rounded;
       case 'uncategorized':
-        return Icons.category_outlined;
+        return Icons.category_rounded;
       default:
-        return Icons.attach_money;
+        return Icons.attach_money_rounded;
     }
   }
 
   Color _getCategoryColor(String category) {
     switch (category.toLowerCase()) {
       case 'food':
-        return const Color(0xFF4CAF50);
+        return Colors.green;
       case 'transport':
-        return const Color(0xFF2196F3);
+        return Colors.blue;
       case 'entertainment':
-        return const Color(0xFF9C27B0);
+        return Colors.purple;
       case 'utilities':
-        return const Color(0xFFFF9800);
+        return Colors.orange;
       case 'rent':
-        return const Color(0xFF795548);
+        return Colors.brown;
       case 'uncategorized':
         return Theme.of(context).colorScheme.primary;
       default:
-        return const Color(0xFF607D8B);
+        return Colors.grey;
     }
   }
 }

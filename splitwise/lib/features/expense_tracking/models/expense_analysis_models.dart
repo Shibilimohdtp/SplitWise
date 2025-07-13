@@ -22,7 +22,13 @@ Future<double> calculateTotalExpenses(
     ExpenseService expenseService, String groupId) async {
   // Simpler calculation using stream's first value and fold
   final expenses = await expenseService.getGroupExpenses(groupId).first;
-  return expenses.fold<double>(0.0, (sum, expense) => sum + expense.amount);
+  return expenses.fold<double>(0.0, (sum, expense) {
+    // Exclude settlement transactions from total expenses
+    if (expense.category == 'Settlement') {
+      return sum; // Skip settlement transactions
+    }
+    return sum + expense.amount;
+  });
 }
 
 Future<Map<String, double>> getMonthlyExpenses(
@@ -32,6 +38,10 @@ Future<Map<String, double>> getMonthlyExpenses(
   // Use DateFormat consistently
   final monthFormatter = DateFormat('MMM yyyy');
   for (var expense in expenses) {
+    // Skip settlement transactions
+    if (expense.category == 'Settlement') {
+      continue;
+    }
     final month = monthFormatter.format(expense.date);
     monthlyExpenses.update(month, (value) => value + expense.amount,
         ifAbsent: () => expense.amount);

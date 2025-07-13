@@ -17,6 +17,7 @@ import 'package:splitwise/widgets/common/action_bottom_bar.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:io';
+import 'package:splitwise/widgets/common/animated_wrapper.dart';
 
 class AddExpenseScreen extends StatefulWidget {
   final Group group;
@@ -105,131 +106,120 @@ class AddExpenseScreenState extends State<AddExpenseScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Theme.of(context).colorScheme.surface,
+        backgroundColor: colorScheme.surface,
         title: Text(
-          'Add Expense',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+          'Add New Expense',
+          style: textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface,
+          ),
         ),
         leading: IconButton(
           icon: const Icon(Icons.close, size: 20),
           onPressed: () => Navigator.pop(context),
           iconSize: 20,
-          style: IconButton.styleFrom(
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          ),
         ),
       ),
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
           children: [
-            ExpenseDetailsSection(
-              descriptionController: _descriptionController,
-              amountController: _amountController,
-              selectedCategory: _category,
-              onCategorySelected: (category) {
-                setState(() {
-                  _category = category;
-                });
-              },
-              categories: _categories,
+            _buildAnimatedSection(
+              index: 0,
+              child: ExpenseDetailsSection(
+                descriptionController: _descriptionController,
+                amountController: _amountController,
+                selectedCategory: _category,
+                onCategorySelected: (category) {
+                  setState(() => _category = category);
+                },
+                categories: _categories,
+              ),
             ),
-            const SizedBox(height: 12),
-            PayerSelectionSection(
-              group: widget.group,
-              userService: _userService,
-              selectedPayerId: _selectedPayerId,
-              onPayerSelected: (payerId) {
-                setState(() {
-                  _selectedPayerId = payerId;
-                });
-              },
+            _buildAnimatedSection(
+              index: 1,
+              child: PayerSelectionSection(
+                group: widget.group,
+                userService: _userService,
+                selectedPayerId: _selectedPayerId,
+                onPayerSelected: (payerId) {
+                  setState(() => _selectedPayerId = payerId);
+                },
+              ),
             ),
-            const SizedBox(height: 12),
-            ParticipantsSection(
-              group: widget.group,
-              userService: _userService,
-              participants: _participants,
-              onParticipantToggled: (memberId, isSelected) {
-                setState(() {
-                  _participants[memberId] = isSelected;
-                });
-              },
-              onSelectAll: () {
-                setState(() {
-                  for (var memberId in widget.group.memberIds) {
-                    _participants[memberId] = true;
+            _buildAnimatedSection(
+              index: 2,
+              child: ParticipantsSection(
+                group: widget.group,
+                userService: _userService,
+                participants: _participants,
+                onParticipantToggled: (memberId, isSelected) {
+                  setState(() => _participants[memberId] = isSelected);
+                },
+                onSelectAll: () => setState(() {
+                  for (var id in _getAllMemberIdentifiers()) {
+                    _participants[id] = true;
                   }
-                });
-              },
-              onClearAll: () {
-                setState(() {
-                  for (var memberId in widget.group.memberIds) {
-                    _participants[memberId] = false;
+                }),
+                onClearAll: () => setState(() {
+                  for (var id in _getAllMemberIdentifiers()) {
+                    _participants[id] = false;
                   }
-                });
-              },
+                }),
+              ),
             ),
-            const SizedBox(height: 12),
-            SplitMethodSection(
-              group: widget.group,
-              userService: _userService,
-              splitMethod: _splitMethod,
-              splitMethods: _splitMethods,
-              onSplitMethodChanged: (method) {
-                setState(() {
-                  _splitMethod = method;
-                });
-              },
-              participants: _participants,
-              customSplitAmounts: _customSplitAmounts,
-              percentageSplits: _percentageSplits,
-              shareSplits: _shareSplits,
-              onCustomSplitChanged: (memberId, amount) {
-                setState(() {
-                  _customSplitAmounts[memberId] = amount;
-                });
-              },
-              onPercentageSplitChanged: (memberId, percentage) {
-                setState(() {
-                  _percentageSplits[memberId] = percentage;
-                });
-              },
-              onShareSplitChanged: (memberId, shares) {
-                setState(() {
-                  _shareSplits[memberId] = shares;
-                });
-              },
-              totalAmount: double.tryParse(_amountController.text),
+            _buildAnimatedSection(
+              index: 3,
+              child: SplitMethodSection(
+                group: widget.group,
+                userService: _userService,
+                splitMethod: _splitMethod,
+                splitMethods: _splitMethods,
+                onSplitMethodChanged: (method) {
+                  setState(() => _splitMethod = method);
+                },
+                participants: _participants,
+                customSplitAmounts: _customSplitAmounts,
+                percentageSplits: _percentageSplits,
+                shareSplits: _shareSplits,
+                onCustomSplitChanged: (memberId, amount) {
+                  setState(() => _customSplitAmounts[memberId] = amount);
+                },
+                onPercentageSplitChanged: (memberId, percentage) {
+                  setState(() => _percentageSplits[memberId] = percentage);
+                },
+                onShareSplitChanged: (memberId, shares) {
+                  setState(() => _shareSplits[memberId] = shares);
+                },
+                totalAmount: double.tryParse(_amountController.text),
+              ),
             ),
-            const SizedBox(height: 12),
-            AdditionalDetailsSection(
-              commentController: _commentController,
-              receiptImageUrl: _receiptImageUrl,
-              isUploadingReceipt: _isUploadingReceipt,
-              onPickImage: _pickAndUploadImage,
-              onRemoveImage: () {
-                setState(() {
-                  _receiptImageUrl = null;
-                });
-              },
+            _buildAnimatedSection(
+              index: 4,
+              child: AdditionalDetailsSection(
+                commentController: _commentController,
+                receiptImageUrl: _receiptImageUrl,
+                isUploadingReceipt: _isUploadingReceipt,
+                onPickImage: _pickAndUploadImage,
+                onRemoveImage: () => setState(() => _receiptImageUrl = null),
+              ),
             ),
+            const SizedBox(height: 16),
           ],
         ),
       ),
-      bottomNavigationBar: ActionBottomBar.withAmount(
+      bottomNavigationBar: ActionBottomBar(
         actionText: 'Add Expense',
         onAction: _submit,
         isLoading: _isSubmitting,
-        amount: double.tryParse(_amountController.text) ?? 0,
-        currency: Provider.of<SettingsService>(context).currency,
       ),
     );
   }
@@ -540,5 +530,19 @@ class AddExpenseScreenState extends State<AddExpenseScreen> {
         setState(() => _isSubmitting = false);
       }
     }
+  }
+
+  Widget _buildAnimatedSection({required int index, required Widget child}) {
+    return AnimatedWrapper.staggered(
+      index: index,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+        child: child,
+      ),
+    );
+  }
+
+  List<String> _getAllMemberIdentifiers() {
+    return [...widget.group.memberIds, ...widget.group.invitedEmails];
   }
 }

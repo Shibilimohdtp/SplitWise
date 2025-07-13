@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:splitwise/services/settings_service.dart';
+import 'package:splitwise/utils/currency_utils.dart';
 
 class GroupBalanceCard extends StatelessWidget {
   final double youAreOwed;
@@ -14,6 +17,8 @@ class GroupBalanceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final settingsService = Provider.of<SettingsService>(context);
+    final currencySymbol = getCurrencySymbol(settingsService.currency);
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final isPositive = netBalance >= 0;
@@ -22,12 +27,13 @@ class GroupBalanceCard extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      color: Colors.transparent,
       elevation: 0,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
-          color: colorScheme.outline.withValues(alpha: 0.3),
+          color: colorScheme.outline.withValues(alpha: 0.1),
           width: 1,
         ),
       ),
@@ -79,7 +85,7 @@ class GroupBalanceCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        '${isPositive ? '+' : ''}\$${netBalance.toStringAsFixed(2)}',
+                        '${isPositive ? '+' : ''}$currencySymbol${netBalance.toStringAsFixed(2)}',
                         style: textTheme.labelMedium?.copyWith(
                           color: netBalanceColor,
                           fontWeight: FontWeight.w600,
@@ -104,6 +110,7 @@ class GroupBalanceCard extends StatelessWidget {
                     label: 'You are owed',
                     amount: youAreOwed,
                     positive: true,
+                    currencySymbol: currencySymbol,
                   ),
                 ),
                 Container(
@@ -119,6 +126,7 @@ class GroupBalanceCard extends StatelessWidget {
                     label: 'You owe',
                     amount: youOwe,
                     positive: false,
+                    currencySymbol: currencySymbol,
                   ),
                 ),
               ],
@@ -135,6 +143,7 @@ class GroupBalanceCard extends StatelessWidget {
     required String label,
     required double amount,
     required bool positive,
+    required String currencySymbol,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
     final color = positive ? colorScheme.tertiary : colorScheme.error;
@@ -149,7 +158,7 @@ class GroupBalanceCard extends StatelessWidget {
             Icon(icon, size: 14, color: color),
             const SizedBox(width: 4),
             Text(
-              '\$${amount.toStringAsFixed(2)}',
+              '$currencySymbol${amount.toStringAsFixed(2)}',
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
                     color: color,

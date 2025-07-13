@@ -18,33 +18,22 @@ class GroupHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return Container(
       padding: const EdgeInsets.fromLTRB(8, 4, 8, 12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: colorScheme.surface,
       ),
       child: Column(
         children: [
           Row(
             children: [
-              Hero(
+              _buildIconButton(
+                context,
+                icon: Icons.arrow_back,
+                onPressed: onBackPressed,
                 tag: 'back_button_${group.id}',
-                child: Material(
-                  color: Colors.transparent,
-                  child: IconButton(
-                    icon: Icon(Icons.arrow_back_rounded,
-                        color: Theme.of(context).colorScheme.onSurface,
-                        size: 22),
-                    style: IconButton.styleFrom(
-                      minimumSize: const Size(40, 40),
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    onPressed: onBackPressed,
-                  ),
-                ),
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -54,50 +43,36 @@ class GroupHeader extends StatelessWidget {
                     color: Colors.transparent,
                     child: Text(
                       group.name,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.1,
-                          ),
+                      style: textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.1,
+                      ),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ),
               ),
-              IconButton(
-                icon: Icon(Icons.analytics_rounded,
-                    color: Theme.of(context).colorScheme.primary, size: 22),
-                style: IconButton.styleFrom(
-                  minimumSize: const Size(40, 40),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+              Row(
+                children: [
+                  _buildIconButton(
+                    context,
+                    icon: Icons.analytics_outlined,
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ExpenseAnalysisScreen(group: group),
+                      ),
+                    ),
+                    tooltip: 'View Analytics',
                   ),
-                  backgroundColor: Theme.of(context)
-                      .colorScheme
-                      .primary
-                      .withValues(alpha: 0.08),
-                ),
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ExpenseAnalysisScreen(group: group),
+                  const SizedBox(width: 8),
+                  _buildIconButton(
+                    context,
+                    icon: Icons.more_vert_rounded,
+                    onPressed: showGroupOptions,
+                    tooltip: 'More Options',
                   ),
-                ),
-                tooltip: 'View Analytics',
-              ),
-              const SizedBox(width: 4),
-              IconButton(
-                icon: Icon(Icons.more_vert_rounded,
-                    color: Theme.of(context).colorScheme.onSurface, size: 22),
-                style: IconButton.styleFrom(
-                  minimumSize: const Size(40, 40),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                onPressed: showGroupOptions,
-                tooltip: 'More Options',
+                ],
               ),
             ],
           ),
@@ -107,31 +82,29 @@ class GroupHeader extends StatelessWidget {
               children: [
                 Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .secondaryContainer
-                        .withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(12),
+                    color: colorScheme.secondary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: colorScheme.secondary.withValues(alpha: 0.2),
+                    ),
                   ),
                   child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
                         Icons.group_rounded,
                         size: 14,
-                        color:
-                            Theme.of(context).colorScheme.onSecondaryContainer,
+                        color: colorScheme.secondary,
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 6),
                       Text(
                         '$memberCount members',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSecondaryContainer,
-                              fontWeight: FontWeight.w500,
-                            ),
+                        style: textTheme.bodySmall?.copyWith(
+                          color: colorScheme.secondary,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),
@@ -142,5 +115,43 @@ class GroupHeader extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget _buildIconButton(
+    BuildContext context, {
+    required IconData icon,
+    required VoidCallback onPressed,
+    String? tooltip,
+    String? tag,
+  }) {
+    final button = Material(
+      color: Theme.of(context).colorScheme.surfaceContainer,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          width: 40,
+          height: 40,
+          alignment: Alignment.center,
+          child: Icon(
+            icon,
+            size: 20,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ),
+    );
+
+    final Widget buttonWithTooltip = tooltip != null
+        ? Tooltip(
+            message: tooltip,
+            child: button,
+          )
+        : button;
+
+    return tag != null
+        ? Hero(tag: tag, child: buttonWithTooltip)
+        : buttonWithTooltip;
   }
 }

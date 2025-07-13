@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class HomeppBar extends StatelessWidget {
+class HomeAppBar extends StatelessWidget {
   final bool isSearching;
   final bool isScrolled;
   final double appBarElevation;
@@ -12,7 +12,7 @@ class HomeppBar extends StatelessWidget {
   final VoidCallback onMenuTap;
   final int? unreadNotificationCount;
 
-  const HomeppBar({
+  const HomeAppBar({
     super.key,
     required this.isSearching,
     required this.isScrolled,
@@ -27,42 +27,37 @@ class HomeppBar extends StatelessWidget {
   });
 
   Widget _buildNotificationButton(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Stack(
       clipBehavior: Clip.none,
       children: [
         IconButton(
           icon: Icon(
             Icons.notifications_none_rounded,
-            color: Theme.of(context).colorScheme.onSurface,
-            size: 22,
+            color: colorScheme.onSurface,
+            size: 24,
           ),
           onPressed: onNotificationTap,
           tooltip: 'Notifications',
-          style: IconButton.styleFrom(
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            backgroundColor: isScrolled
-                ? Theme.of(context).colorScheme.surface.withValues(alpha: 0.8)
-                : Colors.transparent,
-            padding: const EdgeInsets.all(8),
-          ),
+          style: _iconButtonStyle(context),
         ),
         if (unreadNotificationCount != null && unreadNotificationCount! > 0)
           Positioned(
-            top: 0,
-            right: 0,
+            top: 4,
+            right: 4,
             child: Container(
               padding: const EdgeInsets.all(2),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.error,
+                color: colorScheme.error,
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: Theme.of(context).colorScheme.surface,
-                  width: 1.5,
+                  color: colorScheme.surface,
+                  width: 2,
                 ),
               ),
               constraints: const BoxConstraints(
-                minWidth: 16,
-                minHeight: 16,
+                minWidth: 18,
+                minHeight: 18,
               ),
               child: Center(
                 child: Text(
@@ -70,7 +65,7 @@ class HomeppBar extends StatelessWidget {
                       ? '9+'
                       : unreadNotificationCount!.toString(),
                   style: TextStyle(
-                    color: Theme.of(context).colorScheme.onError,
+                    color: colorScheme.onError,
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
                   ),
@@ -83,8 +78,25 @@ class HomeppBar extends StatelessWidget {
     );
   }
 
+  ButtonStyle _iconButtonStyle(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return IconButton.styleFrom(
+      foregroundColor: colorScheme.onSurface,
+      backgroundColor: isScrolled
+          ? colorScheme.surface.withValues(alpha: 0.8)
+          : Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      padding: const EdgeInsets.all(10),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return SliverAppBar(
       expandedHeight: isSearching ? 0 : 60,
       floating: true,
@@ -92,33 +104,30 @@ class HomeppBar extends StatelessWidget {
       elevation: 0,
       scrolledUnderElevation: appBarElevation,
       backgroundColor: isScrolled
-          ? Theme.of(context).colorScheme.surface.withValues(alpha: 0.98)
-          : Theme.of(context).colorScheme.surface,
+          ? colorScheme.surface.withValues(alpha: 0.98)
+          : colorScheme.surface,
       leading: IconButton(
         icon: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 200),
+          duration: const Duration(milliseconds: 300),
+          transitionBuilder: (child, animation) {
+            return ScaleTransition(scale: animation, child: child);
+          },
           child: isSearching
               ? Icon(
-                  Icons.arrow_back,
+                  Icons.arrow_back_ios_new_rounded,
                   key: const ValueKey('back'),
-                  color: Theme.of(context).colorScheme.primary,
+                  color: colorScheme.primary,
                   size: 22,
                 )
               : Icon(
-                  Icons.menu,
+                  Icons.menu_rounded,
                   key: const ValueKey('menu'),
-                  color: Theme.of(context).colorScheme.onSurface,
-                  size: 22,
+                  color: colorScheme.onSurface,
+                  size: 24,
                 ),
         ),
         onPressed: isSearching ? onSearchClear : onMenuTap,
-        style: IconButton.styleFrom(
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          backgroundColor: isScrolled && !isSearching
-              ? Theme.of(context).colorScheme.surface.withValues(alpha: 0.8)
-              : Colors.transparent,
-          padding: const EdgeInsets.all(8),
-        ),
+        style: _iconButtonStyle(context),
       ),
       title: isSearching
           ? TextField(
@@ -126,16 +135,16 @@ class HomeppBar extends StatelessWidget {
               autofocus: true,
               decoration: InputDecoration(
                 hintText: 'Search groups...',
-                hintStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+                hintStyle: textTheme.bodyLarge?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
                 border: InputBorder.none,
                 contentPadding:
                     const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
               ),
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
+              style: textTheme.bodyLarge?.copyWith(
+                color: colorScheme.onSurface,
+              ),
               onChanged: onSearchChanged,
             )
           : null,
@@ -143,52 +152,28 @@ class HomeppBar extends StatelessWidget {
         if (!isSearching)
           IconButton(
             icon: Icon(
-              Icons.search,
-              color: Theme.of(context).colorScheme.onSurface,
-              size: 22,
+              Icons.search_rounded,
+              color: colorScheme.onSurface,
+              size: 24,
             ),
             onPressed: onSearchToggle,
             tooltip: 'Search',
-            style: IconButton.styleFrom(
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              backgroundColor: isScrolled
-                  ? Theme.of(context).colorScheme.surface.withValues(alpha: 0.8)
-                  : Colors.transparent,
-              padding: const EdgeInsets.all(8),
-            ),
+            style: _iconButtonStyle(context),
           ),
         if (!isSearching) _buildNotificationButton(context),
         if (isSearching && searchController.text.isNotEmpty)
           IconButton(
             icon: Icon(
-              Icons.clear,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-              size: 20,
+              Icons.clear_rounded,
+              color: colorScheme.onSurfaceVariant,
+              size: 22,
             ),
             onPressed: onSearchClear,
             tooltip: 'Clear',
-            style: IconButton.styleFrom(
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
+            style: _iconButtonStyle(context),
           ),
         const SizedBox(width: 8),
       ],
-      flexibleSpace: !isSearching
-          ? FlexibleSpaceBar(
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Theme.of(context).colorScheme.surface,
-                      Theme.of(context).colorScheme.surface,
-                    ],
-                  ),
-                ),
-              ),
-            )
-          : null,
     );
   }
 }
