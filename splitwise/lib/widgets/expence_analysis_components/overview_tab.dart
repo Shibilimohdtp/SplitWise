@@ -6,7 +6,7 @@ import 'package:splitwise/models/group.dart';
 import 'package:splitwise/services/expense_service.dart';
 import 'package:splitwise/services/settings_service.dart';
 import 'package:splitwise/services/user_service.dart';
-import 'package:splitwise/features/expense_tracking/models/expense_analysis_models.dart';
+import 'package:splitwise/models/expense_analysis_models.dart';
 import 'package:splitwise/utils/currency_utils.dart';
 import 'package:splitwise/widgets/common/animated_wrapper.dart';
 import 'package:splitwise/widgets/expence_analysis_components/future_content_builder.dart';

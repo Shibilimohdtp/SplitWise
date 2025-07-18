@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:splitwise/models/group.dart';
 import 'package:splitwise/services/auth_service.dart';
 import 'package:splitwise/services/group_service.dart';
+
 import 'package:splitwise/widgets/common/action_bottom_bar.dart';
 import 'package:splitwise/widgets/common/animated_wrapper.dart';
 import 'package:splitwise/widgets/create_group/group_info_section.dart';
@@ -10,7 +12,8 @@ import 'package:splitwise/widgets/create_group/members_section.dart';
 import 'package:splitwise/widgets/feedback/status_snackbar.dart';
 
 class CreateGroupScreen extends StatefulWidget {
-  const CreateGroupScreen({super.key});
+  final Group? group;
+  const CreateGroupScreen({super.key, this.group});
 
   @override
   CreateGroupScreenState createState() => CreateGroupScreenState();
@@ -18,12 +21,24 @@ class CreateGroupScreen extends StatefulWidget {
 
 class CreateGroupScreenState extends State<CreateGroupScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _descriptionController = TextEditingController();
+  late final TextEditingController _nameController;
+  late final TextEditingController _descriptionController;
   final _memberEmailController = TextEditingController();
   bool _isLoading = false;
   final List<String> _members = [];
   final FocusNode _emailFocusNode = FocusNode();
+  bool get _isEditMode => widget.group != null;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.group?.name);
+    _descriptionController =
+        TextEditingController(text: widget.group?.description);
+    if (_isEditMode) {
+      _members.addAll(widget.group!.invitedEmails);
+    }
+  }
 
   @override
   void dispose() {
@@ -38,74 +53,92 @@ class CreateGroupScreenState extends State<CreateGroupScreen> {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
       try {
-        final authService = Provider.of<AuthService>(context, listen: false);
         final groupService = GroupService();
-        final currentUser = authService.currentUser;
-
-        if (currentUser == null) {
-          throw Exception('No user logged in. Please sign in again.');
-        }
-
-        // Create the group first
-        final group = await groupService.createGroup(
-          _nameController.text.trim(),
-          _descriptionController.text.trim(),
-          currentUser.uid,
-        );
-
-        if (group != null) {
-          // If there are members to add
-          if (_members.isNotEmpty) {
-            try {
-              // Add members one by one and catch individual errors
-              for (String memberEmail in _members) {
-                try {
-                  await groupService.inviteMember(group.id, memberEmail);
-                } catch (memberError) {
-                  // Log the error but continue with other members
-                  if (kDebugMode) {
-                    print('Error adding member $memberEmail: $memberError');
-                  }
-                  // Optionally show a warning for this specific member
-                  if (mounted) {
-                    StatusSnackbar.showError(
-                      context,
-                      message: 'Could not add $memberEmail',
-                      details: memberError.toString(),
-                    );
-                  }
-                }
-              }
-            } catch (membersError) {
-              // If there's a general error with adding members, log it
-              if (kDebugMode) {
-                print('Error adding members: $membersError');
-              }
-              // But still consider the group creation successful
-            }
-          }
-
+        if (_isEditMode) {
+          final updatedGroup = widget.group!.copyWith(
+            name: _nameController.text.trim(),
+            description: _descriptionController.text.trim(),
+            invitedEmails: _members,
+          );
+          await groupService.updateGroup(updatedGroup);
           if (mounted) {
-            // Show success message before popping
             StatusSnackbar.showSuccess(
               context,
-              message: 'Group created successfully!',
+              message: 'Group updated successfully!',
             );
-            // Delay navigation slightly to allow snackbar to be seen
-            Future.delayed(const Duration(milliseconds: 1000), () {
-              if (mounted) {
-                Navigator.of(context).pop(true);
-              }
-            });
+            Navigator.of(context).pop(true);
           }
         } else {
-          throw Exception('Failed to create group. Please try again.');
+          final authService = Provider.of<AuthService>(context, listen: false);
+          final currentUser = authService.currentUser;
+
+          if (currentUser == null) {
+            throw Exception('No user logged in. Please sign in again.');
+          }
+
+          // Create the group first
+          final group = await groupService.createGroup(
+            _nameController.text.trim(),
+            _descriptionController.text.trim(),
+            currentUser.uid,
+          );
+
+          if (group != null) {
+            // If there are members to add
+            if (_members.isNotEmpty) {
+              try {
+                // Add members one by one and catch individual errors
+                for (String memberEmail in _members) {
+                  try {
+                    await groupService.inviteMember(group.id, memberEmail);
+                  } catch (memberError) {
+                    // Log the error but continue with other members
+                    if (kDebugMode) {
+                      print('Error adding member $memberEmail: $memberError');
+                    }
+                    // Optionally show a warning for this specific member
+                    if (mounted) {
+                      StatusSnackbar.showError(
+                        context,
+                        message: 'Could not add $memberEmail',
+                        details: memberError.toString(),
+                      );
+                    }
+                  }
+                }
+              } catch (membersError) {
+                // If there's a general error with adding members, log it
+                if (kDebugMode) {
+                  print('Error adding members: $membersError');
+                }
+                // But still consider the group creation successful
+              }
+            }
+
+            if (mounted) {
+              // Show success message before popping
+              StatusSnackbar.showSuccess(
+                context,
+                message: 'Group created successfully!',
+              );
+              // Delay navigation slightly to allow snackbar to be seen
+              Future.delayed(const Duration(milliseconds: 1000), () {
+                if (mounted) {
+                  Navigator.of(context).pop(true);
+                }
+              });
+            }
+          } else {
+            throw Exception('Failed to create group. Please try again.');
+          }
         }
       } catch (e) {
         if (mounted) {
           StatusSnackbar.showError(
             context,
-            message: 'Failed to create group',
+            message: _isEditMode
+                ? 'Failed to update group'
+                : 'Failed to create group',
             details: e.toString(),
           );
         }
@@ -177,7 +210,7 @@ class CreateGroupScreenState extends State<CreateGroupScreen> {
         elevation: 0,
         backgroundColor: colorScheme.surface,
         title: Text(
-          'Create New Group',
+          _isEditMode ? 'Edit Group' : 'Create New Group',
           style: textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
             color: colorScheme.onSurface,
@@ -228,7 +261,7 @@ class CreateGroupScreenState extends State<CreateGroupScreen> {
         ),
       ),
       bottomNavigationBar: ActionBottomBar(
-        actionText: 'Create Group',
+        actionText: _isEditMode ? 'Save Changes' : 'Create Group',
         onAction: _submit,
         isLoading: _isLoading,
       ),

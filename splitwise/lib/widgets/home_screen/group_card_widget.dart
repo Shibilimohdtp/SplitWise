@@ -5,6 +5,7 @@ import 'package:splitwise/services/settings_service.dart';
 import 'package:splitwise/features/group_management/group_detail_screen.dart';
 import 'package:splitwise/features/expense_tracking/add_expense_screen.dart';
 import 'package:splitwise/features/expense_tracking/expense_analysis_screen.dart';
+import 'package:splitwise/features/group_management/create_group_screen.dart';
 import 'package:splitwise/utils/currency_utils.dart';
 
 class GroupCardWidget extends StatefulWidget {
@@ -360,7 +361,12 @@ class GroupCardWidgetState extends State<GroupCardWidget> {
             );
             break;
           case 'edit':
-            // Handle edit action
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => CreateGroupScreen(group: group),
+              ),
+            );
             break;
           case 'delete':
             _showDeleteGroupDialog(group);

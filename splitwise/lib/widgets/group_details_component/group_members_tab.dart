@@ -51,19 +51,68 @@ class GroupMembersTab extends StatelessWidget {
           ),
         ),
         if (group.creatorId == currentUserId)
-          TextButton.icon(
-            onPressed: showAddMemberDialog,
-            icon: const Icon(Icons.add_circle_outline_rounded, size: 18),
-            label: const Text('Invite'),
-            style: TextButton.styleFrom(
-              foregroundColor: colorScheme.primary,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+          _buildEnhancedInviteButton(context),
+      ],
+    );
+  }
+
+  Widget _buildEnhancedInviteButton(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      child: Material(
+        elevation: 2,
+        borderRadius: BorderRadius.circular(24),
+        shadowColor: colorScheme.primary.withValues(alpha: 0.3),
+        child: InkWell(
+          onTap: showAddMemberDialog,
+          borderRadius: BorderRadius.circular(24),
+          splashColor: colorScheme.primary.withValues(alpha: 0.2),
+          highlightColor: colorScheme.primary.withValues(alpha: 0.1),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              gradient: LinearGradient(
+                colors: [
+                  colorScheme.primary,
+                  colorScheme.primary.withValues(alpha: 0.8),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: colorScheme.primary.withValues(alpha: 0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.person_add_rounded,
+                  size: 16,
+                  color: colorScheme.onPrimary,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Invite',
+                  style: textTheme.labelMedium?.copyWith(
+                    color: colorScheme.onPrimary,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
             ),
           ),
-      ],
+        ),
+      ),
     );
   }
 

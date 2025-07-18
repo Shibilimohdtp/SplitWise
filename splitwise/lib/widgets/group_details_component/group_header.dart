@@ -37,19 +37,34 @@ class GroupHeader extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: Hero(
-                  tag: 'group_name_${group.id}',
-                  child: Material(
-                    color: Colors.transparent,
-                    child: Text(
-                      group.name,
-                      style: textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.1,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Hero(
+                      tag: 'group_name_${group.id}',
+                      child: Material(
+                        color: Colors.transparent,
+                        child: Text(
+                          group.name,
+                          style: textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.1,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
+                    if (group.description.isNotEmpty) ...[
+                      Text(
+                        group.description,
+                        style: textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    ],
+                  ],
                 ),
               ),
               Row(

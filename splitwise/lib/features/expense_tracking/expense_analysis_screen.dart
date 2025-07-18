@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:open_file/open_file.dart';
 import 'package:provider/provider.dart';
 import 'package:splitwise/models/group.dart';
+import 'package:splitwise/services/auth_service.dart';
 import 'package:splitwise/services/expense_service.dart';
 import 'package:splitwise/services/settings_service.dart';
 import 'package:splitwise/services/user_service.dart';
-import 'package:splitwise/features/expense_tracking/models/expense_analysis_models.dart';
+import 'package:splitwise/models/expense_analysis_models.dart';
 import 'package:splitwise/widgets/expence_analysis_components/overview_tab.dart';
 import 'package:splitwise/widgets/expence_analysis_components/balances_tab.dart';
 import 'package:splitwise/widgets/expence_analysis_components/settlements_tab.dart';
+import 'package:splitwise/services/export_service.dart';
 
 class ExpenseAnalysisScreen extends StatefulWidget {
   final Group group;
@@ -20,11 +23,13 @@ class ExpenseAnalysisScreen extends StatefulWidget {
 class ExpenseAnalysisScreenState extends State<ExpenseAnalysisScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  bool _isLoading = false;
 
   // --- Cached Services ---
   late SettingsService _settingsService;
   late ExpenseService _expenseService;
   late UserService _userService;
+  late AuthService _authService;
 
   // --- Lifecycle ---
   @override
@@ -35,12 +40,64 @@ class ExpenseAnalysisScreenState extends State<ExpenseAnalysisScreen>
     _settingsService = Provider.of<SettingsService>(context, listen: false);
     _expenseService = Provider.of<ExpenseService>(context, listen: false);
     _userService = Provider.of<UserService>(context, listen: false);
+    _authService = Provider.of<AuthService>(context, listen: false);
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  Future<void> _exportExpenseAnalysis() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    final filePath = await ExportService(
+            _expenseService, _userService, _settingsService, _authService)
+        .exportExpenseAnalysis(widget.group, context);
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    // ignore: use_build_context_synchronously
+    _showExportOptionsDialog(context, filePath);
+  }
+
+  void _showExportOptionsDialog(BuildContext context, String filePath) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Export Options'),
+          content: const Text('Choose an option to proceed:'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                OpenFile.open(filePath);
+              },
+              child: const Text('View PDF'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                // Implement the download functionality here
+                // For example, you can use a package like `share_plus` to share the file
+                // or use `flutter_downloader` to download the file
+                // This is just a placeholder to show the concept
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Downloading PDF...')),
+                );
+              },
+              child: const Text('Download PDF'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   // --- Build Method ---
@@ -76,6 +133,24 @@ class ExpenseAnalysisScreenState extends State<ExpenseAnalysisScreen>
           style: iconButtonStyle,
         ),
         actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: IconButton(
+              icon: _isLoading
+                  ? SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(colorScheme.primary),
+                      ),
+                    )
+                  : Icon(Icons.share, size: 20, color: colorScheme.primary),
+              onPressed: _isLoading ? null : _exportExpenseAnalysis,
+              style: iconButtonStyle,
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
             child: IconButton(
@@ -144,7 +219,6 @@ class ExpenseAnalysisScreenState extends State<ExpenseAnalysisScreen>
               outlineBorderSide: outlineBorderSide,
               cardBorderRadius: cardBorderRadius,
             ),
-
             // Balances Tab
             BalancesTab(
               group: widget.group,
@@ -154,7 +228,6 @@ class ExpenseAnalysisScreenState extends State<ExpenseAnalysisScreen>
               outlineBorderSide: outlineBorderSide,
               cardBorderRadius: cardBorderRadius,
             ),
-
             // Settlements Tab
             SettlementsTab(
               group: widget.group,

@@ -8,7 +8,7 @@ import 'package:splitwise/services/expense_service.dart';
 import 'package:splitwise/services/user_service.dart';
 import 'package:splitwise/features/authentication/login_screen.dart';
 import 'package:splitwise/features/group_management/home_screen.dart';
-import 'package:splitwise/utils/app_theme.dart';
+import 'package:splitwise/constants/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

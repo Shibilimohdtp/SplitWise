@@ -149,7 +149,7 @@ class SettingsScreenState extends State<SettingsScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const PrivacyPolicyScreen(),
+                          builder: (context) => PrivacyPolicyScreen(),
                         ),
                       );
                     },

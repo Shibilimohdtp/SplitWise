@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:splitwise/features/expense_tracking/models/expense_analysis_models.dart';
+import 'package:splitwise/models/expense_analysis_models.dart';
 
 /// A generic FutureBuilder wrapper with loading, error, and empty state handling
 class FutureContentBuilder<T> extends StatelessWidget {

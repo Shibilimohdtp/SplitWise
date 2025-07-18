@@ -6,6 +6,7 @@ class User {
   final String username;
   final String email;
   final String? profileImageUrl;
+  final String? phone;
 
   User({
     required this.uid,
@@ -13,6 +14,7 @@ class User {
     required this.username,
     required this.email,
     this.profileImageUrl,
+    this.phone,
   });
 
   User.fromFirebase({
@@ -21,6 +23,7 @@ class User {
     this.name = '',
     this.username = '',
     this.profileImageUrl,
+    this.phone = '',
   });
 
   factory User.fromFirestore(DocumentSnapshot doc) {
@@ -31,6 +34,7 @@ class User {
       username: data['username'] ?? '',
       email: data['email'] ?? '',
       profileImageUrl: data['profileImageUrl'],
+      phone: data['phone'] ?? '',
     );
   }
 
@@ -40,6 +44,7 @@ class User {
       'username': username,
       'email': email,
       'profileImageUrl': profileImageUrl,
+      'phone': phone,
     };
   }
 }

@@ -255,4 +255,24 @@ class ExpenseService {
       return null;
     }
   }
+
+  Future<Map<String, dynamic>> getExpenseSplits(String expenseId) async {
+    final doc = await _firestore.collection('expenses').doc(expenseId).get();
+    if (!doc.exists) return {};
+    
+    final expense = Expense.fromFirestore(doc);
+    final splitDetails = expense.splitDetails;
+    
+    // Convert splitDetails to the format expected by ExportService
+    Map<String, dynamic> splits = {};
+    splitDetails.forEach((userId, amount) {
+      splits[userId] = {
+        'share': amount,
+        'paid': userId == expense.payerId ? expense.amount : 0,
+        'owes': userId == expense.payerId ? 0 : amount
+      };
+    });
+    
+    return splits;
+  }
 }
