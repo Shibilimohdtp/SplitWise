@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:splitwise/services/expense_service.dart';
 
 // --- Constants ---
@@ -29,26 +28,6 @@ Future<double> calculateTotalExpenses(
     }
     return sum + expense.amount;
   });
-}
-
-Future<Map<String, double>> getMonthlyExpenses(
-    ExpenseService expenseService, String groupId) async {
-  final expenses = await expenseService.getGroupExpenses(groupId).first;
-  final Map<String, double> monthlyExpenses = {};
-  // Use DateFormat consistently
-  final monthFormatter = DateFormat('MMM yyyy');
-  for (var expense in expenses) {
-    // Skip settlement transactions
-    if (expense.category == 'Settlement') {
-      continue;
-    }
-    final month = monthFormatter.format(expense.date);
-    monthlyExpenses.update(month, (value) => value + expense.amount,
-        ifAbsent: () => expense.amount);
-  }
-  // Consider sorting the map by date if needed for the chart
-  // Example: return Map.fromEntries(monthlyExpenses.entries.toList()..sort(...));
-  return monthlyExpenses;
 }
 
 Color getDistributionColor(int index) {

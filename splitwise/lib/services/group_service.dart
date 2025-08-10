@@ -70,6 +70,11 @@ class GroupService {
             snapshot.docs.map((doc) => Group.fromFirestore(doc)).toList());
   }
 
+  Future<Group> getGroup(String groupId) async {
+    final doc = await _firestore.collection('groups').doc(groupId).get();
+    return Group.fromFirestore(doc);
+  }
+
   Future<void> inviteMember(String groupId, String email) async {
     try {
       // First, find the user with the given email

@@ -15,9 +15,9 @@ class AppTheme {
 
       // Secondary colors
       secondary: AppColors.secondaryMain,
-      onSecondary: Colors.white,
+      onSecondary: AppColors.textDark,
       secondaryContainer: AppColors.secondaryLight,
-      onSecondaryContainer: AppColors.secondaryDark,
+      onSecondaryContainer: AppColors.primaryDark,
 
       // Tertiary/accent colors
       tertiary: AppColors.accentMain,
@@ -89,8 +89,7 @@ class AppTheme {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide:
-            const BorderSide(color: AppColors.secondaryMain, width: 2.0),
+        borderSide: const BorderSide(color: AppColors.primaryMain, width: 2.0),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -127,6 +126,27 @@ class AppTheme {
       thickness: 1,
       space: 1,
     ),
+    // Additional theme customizations for the new color scheme
+    chipTheme: const ChipThemeData(
+      backgroundColor: AppColors.secondaryLight,
+      selectedColor: AppColors.primaryLight,
+      labelStyle: TextStyle(color: AppColors.textMain),
+      side: BorderSide(color: AppColors.borderLight),
+    ),
+    switchTheme: SwitchThemeData(
+      thumbColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return AppColors.primaryMain;
+        }
+        return AppColors.borderMain;
+      }),
+      trackColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return AppColors.primaryLight;
+        }
+        return AppColors.borderLight;
+      }),
+    ),
   );
 
   static final ThemeData darkTheme = ThemeData(
@@ -142,9 +162,9 @@ class AppTheme {
 
       // Secondary colors
       secondary: AppColors.secondaryLight,
-      onSecondary: Colors.black,
+      onSecondary: AppColors.textDark,
       secondaryContainer: AppColors.secondaryMain,
-      onSecondaryContainer: Colors.white,
+      onSecondaryContainer: AppColors.primaryDark,
 
       // Tertiary/accent colors
       tertiary: AppColors.accentLight,
@@ -268,6 +288,27 @@ class AppTheme {
       thickness: 1,
       space: 1,
     ),
+    // Additional theme customizations for dark theme
+    chipTheme: const ChipThemeData(
+      backgroundColor: AppColors.surfaceDarkTheme,
+      selectedColor: AppColors.primaryLightDarkTheme,
+      labelStyle: TextStyle(color: AppColors.textLightDarkTheme),
+      side: BorderSide(color: AppColors.borderMainDarkTheme),
+    ),
+    switchTheme: SwitchThemeData(
+      thumbColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return AppColors.primaryMainDarkTheme;
+        }
+        return AppColors.borderMainDarkTheme;
+      }),
+      trackColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return AppColors.primaryLightDarkTheme;
+        }
+        return AppColors.borderLightDarkTheme;
+      }),
+    ),
   );
 
   static TextTheme _buildTextTheme({required bool isDark}) {
@@ -287,7 +328,7 @@ class AppTheme {
       ),
       displayMedium: TextStyle(
         fontSize: 28,
-        fontWeight: FontWeight.bold,
+        fontWeight: FontWeight.w600,
         color: darkColor,
         letterSpacing: -0.25,
       ),

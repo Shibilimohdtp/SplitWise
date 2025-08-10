@@ -27,6 +27,7 @@ class BalanceOverviewWidget extends StatefulWidget {
 class BalanceOverviewWidgetState extends State<BalanceOverviewWidget> {
   late PageController _balancePageController;
   late ValueNotifier<double> _pagePositionNotifier;
+  late ScrollController _activityScrollController;
 
   // Use Futures to manage async data loading and caching implicitly
   Future<Map<String, double>>? _balanceFuture;
@@ -47,6 +48,8 @@ class BalanceOverviewWidgetState extends State<BalanceOverviewWidget> {
     _balancePageController.addListener(() {
       _pagePositionNotifier.value = _balancePageController.page ?? 0;
     });
+
+    _activityScrollController = ScrollController();
 
     // Note: Futures are initialized in didChangeDependencies
     // because they depend on _expenseService
@@ -283,6 +286,7 @@ class BalanceOverviewWidgetState extends State<BalanceOverviewWidget> {
   void dispose() {
     _balancePageController.dispose();
     _pagePositionNotifier.dispose();
+    _activityScrollController.dispose();
     super.dispose();
   }
 
@@ -314,84 +318,79 @@ class BalanceOverviewWidgetState extends State<BalanceOverviewWidget> {
         children: [
           SizedBox(
             height: 160, // Keep original height
-            child: NotificationListener<ScrollNotification>(
-              // Prevent scroll events from propagating to parent
-              onNotification: (notification) => true,
-              child: PageView.builder(
-                controller: _balancePageController,
-                itemCount: 3,
-                physics: const BouncingScrollPhysics(),
-                itemBuilder: (context, index) {
-                  switch (index) {
-                    case 0:
-                      // Use FutureBuilder for balance page
-                      return FutureBuilder<Map<String, double>>(
-                        future: _balanceFuture,
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            // Show skeleton only while the first page is loading
-                            return _buildBalanceOverviewSkeleton(context);
-                          } else if (snapshot.hasError) {
-                            return Center(
-                                child: Text('Error: ${snapshot.error}'));
-                          } else if (snapshot.hasData) {
-                            final balance =
-                                snapshot.data ?? {'owed': 0, 'owing': 0};
-                            return _buildOverallBalancePageContent(
-                                context, balance, currencySymbol);
-                          } else {
-                            return const Center(child: Text('No balance data'));
-                          }
-                        },
-                      );
-                    case 1:
-                      // Use FutureBuilder for recent activity
-                      return FutureBuilder<List<Map<String, dynamic>>>(
-                        future: _recentActivityFuture,
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const Center(
-                                child: CircularProgressIndicator());
-                          } else if (snapshot.hasError) {
-                            return Center(
-                                child: Text('Error: ${snapshot.error}'));
-                          } else if (snapshot.hasData) {
-                            return _buildRecentActivityPageContent(
-                                context, snapshot.data!, currencySymbol);
-                          } else {
-                            return const Center(
-                                child: Text('No activity data'));
-                          }
-                        },
-                      );
-                    case 2:
-                      // Use FutureBuilder for monthly summary
-                      return FutureBuilder<Map<String, dynamic>>(
-                        future: _monthlySummaryFuture,
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const Center(
-                                child: CircularProgressIndicator());
-                          } else if (snapshot.hasError) {
-                            return Center(
-                                child: Text('Error: ${snapshot.error}'));
-                          } else if (snapshot.hasData) {
-                            return _buildMonthlySummaryPageContent(
-                                context, snapshot.data!, currencySymbol);
-                          } else {
-                            return const Center(child: Text('No summary data'));
-                          }
-                        },
-                      );
-                    default:
-                      // Fallback, should not happen with itemCount: 3
-                      return const SizedBox.shrink();
-                  }
-                },
-              ),
+            child: PageView.builder(
+              controller: _balancePageController,
+              itemCount: 3,
+              physics: const BouncingScrollPhysics(),
+              itemBuilder: (context, index) {
+                switch (index) {
+                  case 0:
+                    // Use FutureBuilder for balance page
+                    return FutureBuilder<Map<String, double>>(
+                      future: _balanceFuture,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          // Show skeleton only while the first page is loading
+                          return _buildBalanceOverviewSkeleton(context);
+                        } else if (snapshot.hasError) {
+                          return Center(
+                              child: Text('Error: ${snapshot.error}'));
+                        } else if (snapshot.hasData) {
+                          final balance =
+                              snapshot.data ?? {'owed': 0, 'owing': 0};
+                          return _buildOverallBalancePageContent(
+                              context, balance, currencySymbol);
+                        } else {
+                          return const Center(child: Text('No balance data'));
+                        }
+                      },
+                    );
+                  case 1:
+                    // Use FutureBuilder for recent activity
+                    return FutureBuilder<List<Map<String, dynamic>>>(
+                      future: _recentActivityFuture,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                              child: CircularProgressIndicator());
+                        } else if (snapshot.hasError) {
+                          return Center(
+                              child: Text('Error: ${snapshot.error}'));
+                        } else if (snapshot.hasData) {
+                          return _buildRecentActivityPageContent(
+                              context, snapshot.data!, currencySymbol);
+                        } else {
+                          return const Center(child: Text('No activity data'));
+                        }
+                      },
+                    );
+                  case 2:
+                    // Use FutureBuilder for monthly summary
+                    return FutureBuilder<Map<String, dynamic>>(
+                      future: _monthlySummaryFuture,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                              child: CircularProgressIndicator());
+                        } else if (snapshot.hasError) {
+                          return Center(
+                              child: Text('Error: ${snapshot.error}'));
+                        } else if (snapshot.hasData) {
+                          return _buildMonthlySummaryPageContent(
+                              context, snapshot.data!, currencySymbol);
+                        } else {
+                          return const Center(child: Text('No summary data'));
+                        }
+                      },
+                    );
+                  default:
+                    // Fallback, should not happen with itemCount: 3
+                    return const SizedBox.shrink();
+                }
+              },
             ),
           ),
           // Page indicators remain the same
@@ -645,164 +644,174 @@ class BalanceOverviewWidgetState extends State<BalanceOverviewWidget> {
       );
     }
 
-    return ListView.separated(
-      padding: EdgeInsets.zero,
-      itemCount: activityData.length,
-      separatorBuilder: (context, index) => Divider(
-        height: 1,
-        thickness: 1,
-        color: colorScheme.outline.withValues(alpha: 0.1),
-        indent: 48, // Aligns with the content after the leading icon
-      ),
-      itemBuilder: (context, index) {
-        final activityItem = activityData[index];
-        final expense = activityItem['expense'] as Expense;
-        final groupName = activityItem['groupName'] as String;
-        // Get payer name for display if needed
-        final payerName = activityItem['payerName'] as String;
-        // Add payer name to description if it's not the current user
-        final descriptionText = expense.payerId != widget.userId
-            ? '${expense.description} (paid by $payerName)'
-            : expense.description;
-        final userAmount = activityItem['userAmount'] as double;
+    return RawScrollbar(
+      controller: _activityScrollController,
+      thumbVisibility: true,
+      thickness: 4.0,
+      radius: const Radius.circular(4.0),
+      notificationPredicate: (notification) =>
+          notification.metrics.axis == Axis.vertical,
+      child: ListView.separated(
+        controller: _activityScrollController,
+        padding: EdgeInsets.zero,
+        itemCount: activityData.length,
+        separatorBuilder: (context, index) => Divider(
+          height: 1,
+          thickness: 1,
+          color: colorScheme.outline.withValues(alpha: 0.1),
+          indent: 48,
+        ),
+        itemBuilder: (context, index) {
+          final activityItem = activityData[index];
+          final expense = activityItem['expense'] as Expense;
+          final groupName = activityItem['groupName'] as String;
+          // Get payer name for display if needed
+          final payerName = activityItem['payerName'] as String;
+          // Add payer name to description if it's not the current user
+          final descriptionText = expense.payerId != widget.userId
+              ? '${expense.description} (paid by $payerName)'
+              : expense.description;
+          final userAmount = activityItem['userAmount'] as double;
 
-        final isPositive = userAmount >= 0;
-        final statusColor =
-            isPositive ? colorScheme.tertiary : colorScheme.error;
-        final now = DateTime.now();
-        final expenseDate = expense.date;
+          final isPositive = userAmount >= 0;
+          final statusColor =
+              isPositive ? colorScheme.tertiary : colorScheme.error;
+          final now = DateTime.now();
+          final expenseDate = expense.date;
 
-        // Format the date relative to today
-        String dateText;
-        if (expenseDate.year == now.year &&
-            expenseDate.month == now.month &&
-            expenseDate.day == now.day) {
-          dateText = 'Today, ${timeFormat.format(expenseDate)}';
-        } else if (expenseDate.year == now.year &&
-            expenseDate.month == now.month &&
-            expenseDate.day == now.day - 1) {
-          dateText = 'Yesterday, ${timeFormat.format(expenseDate)}';
-        } else {
-          dateText = dateFormat.format(expenseDate);
-        }
+          // Format the date relative to today
+          String dateText;
+          if (expenseDate.year == now.year &&
+              expenseDate.month == now.month &&
+              expenseDate.day == now.day) {
+            dateText = 'Today, ${timeFormat.format(expenseDate)}';
+          } else if (expenseDate.year == now.year &&
+              expenseDate.month == now.month &&
+              expenseDate.day == now.day - 1) {
+            dateText = 'Yesterday, ${timeFormat.format(expenseDate)}';
+          } else {
+            dateText = dateFormat.format(expenseDate);
+          }
 
-        // Determine the icon based on the expense category
-        IconData categoryIcon;
-        switch (expense.category.toLowerCase()) {
-          case 'food':
-          case 'groceries':
-          case 'dining':
-          case 'restaurant':
-            categoryIcon = Icons.restaurant_outlined;
-            break;
-          case 'transportation':
-          case 'travel':
-            categoryIcon = Icons.directions_car_outlined;
-            break;
-          case 'entertainment':
-          case 'movie':
-            categoryIcon = Icons.movie_outlined;
-            break;
-          case 'shopping':
-            categoryIcon = Icons.shopping_bag_outlined;
-            break;
-          case 'utilities':
-          case 'bills':
-            categoryIcon = Icons.receipt_outlined;
-            break;
-          case 'settlement':
-            categoryIcon = Icons.account_balance_wallet_outlined;
-            break;
-          default:
-            categoryIcon = Icons.receipt_outlined;
-        }
+          // Determine the icon based on the expense category
+          IconData categoryIcon;
+          switch (expense.category.toLowerCase()) {
+            case 'food':
+            case 'groceries':
+            case 'dining':
+            case 'restaurant':
+              categoryIcon = Icons.restaurant_outlined;
+              break;
+            case 'transportation':
+            case 'travel':
+              categoryIcon = Icons.directions_car_outlined;
+              break;
+            case 'entertainment':
+            case 'movie':
+              categoryIcon = Icons.movie_outlined;
+              break;
+            case 'shopping':
+              categoryIcon = Icons.shopping_bag_outlined;
+              break;
+            case 'utilities':
+            case 'bills':
+              categoryIcon = Icons.receipt_outlined;
+              break;
+            case 'settlement':
+              categoryIcon = Icons.account_balance_wallet_outlined;
+              break;
+            default:
+              categoryIcon = Icons.receipt_outlined;
+          }
 
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            children: [
-              // Activity icon
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: colorScheme.primary.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              children: [
+                // Activity icon
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    categoryIcon,
+                    color: colorScheme.primary,
+                    size: 16,
+                  ),
                 ),
-                child: Icon(
-                  categoryIcon,
-                  color: colorScheme.primary,
-                  size: 16,
-                ),
-              ),
-              const SizedBox(width: 12),
-              // Activity details
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      descriptionText,
-                      style: textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w500,
+                const SizedBox(width: 12),
+                // Activity details
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        descriptionText,
+                        style: textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        Text(
-                          dateText,
-                          style: textTheme.labelSmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Container(
-                          width: 3,
-                          height: 3,
-                          decoration: BoxDecoration(
-                            color: colorScheme.onSurfaceVariant
-                                .withValues(alpha: 0.5),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            groupName,
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Text(
+                            dateText,
                             style: textTheme.labelSmall?.copyWith(
                               color: colorScheme.onSurfaceVariant,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              // Amount
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  '${isPositive ? '+' : '-'}$currencySymbol${userAmount.abs().toStringAsFixed(2)}',
-                  style: textTheme.labelMedium?.copyWith(
-                    color: statusColor,
-                    fontWeight: FontWeight.w600,
+                          const SizedBox(width: 4),
+                          Container(
+                            width: 3,
+                            height: 3,
+                            decoration: BoxDecoration(
+                              color: colorScheme.onSurfaceVariant
+                                  .withValues(alpha: 0.5),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              groupName,
+                              style: textTheme.labelSmall?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-              ),
-            ],
-          ),
-        );
-      },
+                // Amount
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    '${isPositive ? '+' : '-'}$currencySymbol${userAmount.abs().toStringAsFixed(2)}',
+                    style: textTheme.labelMedium?.copyWith(
+                      color: statusColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 

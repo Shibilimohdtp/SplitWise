@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/services.dart';
 import 'package:splitwise/services/user_service.dart';
 import 'package:splitwise/widgets/expence_analysis_components/user_avatar.dart';
 import 'package:splitwise/utils/currency_utils.dart';
@@ -21,6 +22,7 @@ class ChartBuilders {
   ];
 
   /// Builds a modern line chart with enhanced animations and accessibility
+  /// Builds a modern line chart with enhanced animations and accessibility
   static LineChartData buildModernLineChart({
     required Map<String, double> data,
     required double maxY,
@@ -32,38 +34,73 @@ class ChartBuilders {
   }) {
     final currencySymbol = getCurrencySymbol(currency);
 
+    if (data.isEmpty) return LineChartData();
+
+    final entries = data.entries.toList();
+    final spots = entries.asMap().entries.map((entry) {
+      final index = entry.key;
+      final value = entry.value.value;
+      return FlSpot(index.toDouble(), value);
+    }).toList();
+
     return LineChartData(
-      // Enhanced grid with subtle design
+      // Enhanced grid with subtle design and better intervals
       gridData: FlGridData(
         show: showGrid,
         drawVerticalLine: false,
-        horizontalInterval: maxY > 0 ? maxY / 5 : 1,
+        horizontalInterval: maxY > 0 ? maxY / 4 : 1,
         getDrawingHorizontalLine: (value) => FlLine(
-          color: colorScheme.outline.withValues(alpha: 0.06),
+          color: colorScheme.outline.withValues(alpha: 0.1),
           strokeWidth: 1,
-          dashArray: [3, 6],
+          dashArray: [8, 4],
         ),
       ),
 
-      // Modern title styling with better spacing
+      // Enhanced titles with smart formatting
       titlesData: FlTitlesData(
         leftTitles: AxisTitles(
           sideTitles: SideTitles(
             showTitles: true,
             reservedSize: 50,
-            interval: maxY > 0 ? maxY / 5 : 1,
+            interval: maxY > 0 ? maxY / 4 : 1,
             getTitlesWidget: (value, meta) {
               if (value == 0) return const SizedBox.shrink();
               return Padding(
-                padding: const EdgeInsets.only(right: 12),
+                padding: const EdgeInsets.only(right: 8),
                 child: Text(
-                  _formatCurrency(value, currencySymbol),
+                  _formatCurrencyCompact(value, currencySymbol),
                   style: textTheme.labelSmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
+                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                    fontSize: 10,
                     fontWeight: FontWeight.w500,
-                    fontSize: 11,
                   ),
                   textAlign: TextAlign.right,
+                ),
+              );
+            },
+          ),
+        ),
+        bottomTitles: AxisTitles(
+          sideTitles: SideTitles(
+            showTitles: true,
+            reservedSize: 32,
+            interval: 1,
+            getTitlesWidget: (value, meta) {
+              final index = value.toInt();
+              if (index < 0 || index >= entries.length) {
+                return const SizedBox.shrink();
+              }
+
+              final key = entries[index].key;
+              return Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  key,
+                  style: textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               );
             },
@@ -72,118 +109,141 @@ class ChartBuilders {
         topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         rightTitles:
             const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        bottomTitles: AxisTitles(
-          sideTitles: SideTitles(
-            showTitles: true,
-            interval: 1,
-            getTitlesWidget: (value, meta) {
-              final months = data.keys.toList();
-              final index = value.toInt();
-              if (index >= 0 && index < months.length) {
-                return Padding(
-                  padding: const EdgeInsets.only(top: 12),
-                  child: Text(
-                    _formatMonth(months[index]),
-                    style: textTheme.labelSmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w500,
-                      fontSize: 11,
-                    ),
-                  ),
-                );
-              }
-              return const SizedBox.shrink();
-            },
+      ),
+
+      // Enhanced border styling
+      borderData: FlBorderData(
+        show: true,
+        border: Border(
+          bottom: BorderSide(
+            color: colorScheme.outline.withValues(alpha: 0.2),
+            width: 1,
+          ),
+          left: BorderSide(
+            color: colorScheme.outline.withValues(alpha: 0.2),
+            width: 1,
           ),
         ),
       ),
 
-      // Enhanced touch interactions
-      lineTouchData: LineTouchData(
-        enabled: true,
-        handleBuiltInTouches: true,
-        touchSpotThreshold: 25,
-        touchTooltipData: LineTouchTooltipData(
-          tooltipRoundedRadius: 12,
-          tooltipPadding: const EdgeInsets.all(12),
-          tooltipMargin: 8,
-          getTooltipItems: (touchedSpots) {
-            return touchedSpots.map((spot) {
-              final month = data.keys.elementAt(spot.spotIndex);
-              final amount = spot.y;
-              return LineTooltipItem(
-                '$currencySymbol${amount.toStringAsFixed(2)}',
-                textTheme.titleSmall?.copyWith(
-                      color: colorScheme.onInverseSurface,
-                      fontWeight: FontWeight.w600,
-                    ) ??
-                    const TextStyle(),
-                children: [
-                  TextSpan(
-                    text: '\n${_formatMonth(month)}',
-                    style: textTheme.bodySmall?.copyWith(
-                      color:
-                          colorScheme.onInverseSurface.withValues(alpha: 0.8),
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                ],
-              );
-            }).toList();
-          },
-        ),
-      ),
-
-      borderData: FlBorderData(show: false),
       minX: 0,
-      maxX: data.isNotEmpty ? data.length.toDouble() - 1 : 0,
+      maxX: (entries.length - 1).toDouble(),
       minY: 0,
-      maxY: maxY * 1.15, // Optimized padding
+      maxY: maxY * 1.2,
 
-      // Enhanced line styling
+      // Enhanced line styling with gradients and shadows
       lineBarsData: [
         LineChartBarData(
-          spots: data.entries
-              .map((e) => FlSpot(
-                    data.keys.toList().indexOf(e.key).toDouble(),
-                    e.value,
-                  ))
-              .toList(),
+          spots: spots,
           isCurved: true,
           curveSmoothness: 0.35,
-          color: colorScheme.primary,
-          barWidth: 3.5,
-          isStrokeCapRound: true,
           preventCurveOverShooting: true,
-
-          // Modern dot styling
-          dotData: FlDotData(
-            show: true,
-            getDotPainter: (spot, percent, barData, index) =>
-                FlDotCirclePainter(
-              radius: 5,
-              color: colorScheme.primary,
-              strokeWidth: 2.5,
-              strokeColor: colorScheme.surface,
-            ),
+          color: colorScheme.primary,
+          barWidth: 3,
+          isStrokeCapRound: true,
+          gradient: LinearGradient(
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            colors: [
+              colorScheme.primary.withValues(alpha: 0.8),
+              colorScheme.primary,
+              colorScheme.tertiary.withValues(alpha: 0.9),
+            ],
           ),
 
-          // Enhanced gradient
+          // Enhanced dot styling
+          dotData: FlDotData(
+            show: true,
+            getDotPainter: (spot, percent, barData, index) {
+              return FlDotCirclePainter(
+                radius: 4,
+                color: colorScheme.surface,
+                strokeWidth: 3,
+                strokeColor: colorScheme.primary,
+              );
+            },
+          ),
+
+          // Enhanced gradient fill with multiple stops
           belowBarData: BarAreaData(
             show: true,
             gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
               colors: [
                 colorScheme.primary.withValues(alpha: 0.15),
                 colorScheme.primary.withValues(alpha: 0.05),
                 colorScheme.primary.withValues(alpha: 0.0),
               ],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              stops: const [0.0, 0.5, 1.0],
+              stops: const [0.0, 0.7, 1.0],
             ),
+          ),
+
+          // Add shadow effect
+          shadow: Shadow(
+            color: colorScheme.primary.withValues(alpha: 0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
           ),
         ),
       ],
+
+      // Enhanced touch interactions with tooltips and haptic feedback
+      lineTouchData: LineTouchData(
+        enabled: true,
+        touchTooltipData: LineTouchTooltipData(
+          getTooltipColor: (touchedSpot) => colorScheme.inverseSurface,
+          tooltipRoundedRadius: 12,
+          tooltipPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          tooltipMargin: 8,
+          getTooltipItems: (touchedSpots) {
+            return touchedSpots.map((spot) {
+              final index = spot.x.toInt();
+              if (index >= 0 && index < entries.length) {
+                final entry = entries[index];
+                return LineTooltipItem(
+                  '${entry.key}\n$currencySymbol${entry.value.toStringAsFixed(2)}',
+                  TextStyle(
+                    color: colorScheme.onInverseSurface,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                  ),
+                );
+              }
+              return null;
+            }).toList();
+          },
+        ),
+        touchCallback: (FlTouchEvent event, LineTouchResponse? touchResponse) {
+          // Add haptic feedback on touch (requires import 'package:flutter/services.dart')
+          if (event is FlTapUpEvent) {
+            HapticFeedback.lightImpact();
+          }
+        },
+        getTouchedSpotIndicator:
+            (LineChartBarData barData, List<int> spotIndexes) {
+          return spotIndexes.map((spotIndex) {
+            return TouchedSpotIndicatorData(
+              FlLine(
+                color: colorScheme.primary.withValues(alpha: 0.8),
+                strokeWidth: 2,
+                dashArray: [4, 4],
+              ),
+              FlDotData(
+                getDotPainter: (spot, percent, barData, index) {
+                  return FlDotCirclePainter(
+                    radius: 6,
+                    color: colorScheme.primary,
+                    strokeWidth: 3,
+                    strokeColor: colorScheme.surface,
+                  );
+                },
+              ),
+            );
+          }).toList();
+        },
+      ),
     );
   }
 
@@ -531,19 +591,21 @@ class ChartBuilders {
     );
   }
 
+  /// Formats currency values compactly (e.g., 2.5k, 1.2M)
+  static String _formatCurrencyCompact(double value, String currencySymbol) {
+    if (value == 0) return '0';
+
+    if (value >= 1000000) {
+      return '$currencySymbol${(value / 1000000).toStringAsFixed(1)}M';
+    } else if (value >= 1000) {
+      return '$currencySymbol${(value / 1000).toStringAsFixed(0)}k';
+    } else {
+      return '$currencySymbol${value.toStringAsFixed(0)}';
+    }
+  }
+
   // Helper methods
   static Color _getModernColor(int index) {
     return _modernColors[index % _modernColors.length];
-  }
-
-  static String _formatCurrency(double value, String symbol) {
-    if (value >= 1000) {
-      return '$symbol${(value / 1000).toStringAsFixed(1)}k';
-    }
-    return '$symbol${value.toInt()}';
-  }
-
-  static String _formatMonth(String month) {
-    return month.length >= 3 ? month.substring(0, 3) : month;
   }
 }

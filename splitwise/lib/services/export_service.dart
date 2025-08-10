@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:splitwise/models/expense.dart';
 import 'package:intl/intl.dart';
 import 'package:splitwise/services/auth_service.dart';
+import 'package:splitwise/constants/app_color.dart';
 
 class ExportService {
   final ExpenseService _expenseService;
@@ -42,19 +43,19 @@ class ExportService {
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.all(40),
+        margin: const pw.EdgeInsets.all(30),
         build: (pw.Context pdfContext) => [
           _buildTitle(group, ttf),
-          pw.SizedBox(height: 30),
+          pw.SizedBox(height: 25),
           _buildSummarySection(
               totalExpenses, balances, userNames, currentUserId, ttf),
-          pw.SizedBox(height: 30),
+          pw.SizedBox(height: 25),
           _buildTransactionList(expenses, userNames, ttf),
-          pw.SizedBox(height: 30),
+          pw.SizedBox(height: 25),
           _buildExpenseSplits(expenses, expenseSplits, userNames, ttf),
-          pw.SizedBox(height: 30),
+          pw.SizedBox(height: 25),
           _buildBalances(balances, userNames, ttf),
-          pw.SizedBox(height: 30),
+          pw.SizedBox(height: 25),
           _buildSettlements(balances, userNames, ttf),
         ],
       ),
@@ -77,70 +78,33 @@ class ExportService {
         pw.Text(
           'Expense Analysis',
           style: pw.TextStyle(
-            fontSize: 32,
+            fontSize: 28,
             fontWeight: pw.FontWeight.bold,
-            color: const PdfColor.fromInt(0xFF2D3748),
+            color: PdfColor.fromInt(AppColors.primaryDark.toARGB32()),
           ),
         ),
         pw.Text(
-          'Detailed Report',
+          'Group: ${group.name}',
           style: pw.TextStyle(
-            fontSize: 20,
-            fontWeight: pw.FontWeight.bold,
-            color: const PdfColor.fromInt(0xFF4A5568),
+            fontSize: 18,
+            color: PdfColor.fromInt(AppColors.textMain.toARGB32()),
           ),
         ),
-        pw.SizedBox(height: 8),
-        pw.Container(
-          height: 2,
-          width: 100,
-          color: const PdfColor.fromInt(0xFF4299E1),
-        ),
-        pw.SizedBox(height: 16),
+        pw.SizedBox(height: 12),
         pw.Row(
           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
           children: [
-            pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.Text(
-                  'Group Name',
-                  style: const pw.TextStyle(
-                    fontSize: 12,
-                    color: PdfColor.fromInt(0xFF718096),
-                  ),
-                ),
-                pw.Text(
-                  group.name,
-                  style: pw.TextStyle(
-                    fontSize: 16,
-                    fontWeight: pw.FontWeight.bold,
-                    color: const PdfColor.fromInt(0xFF2D3748),
-                  ),
-                ),
-              ],
-            ),
-            pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.end,
-              children: [
-                pw.Text(
-                  'Generated On',
-                  style: const pw.TextStyle(
-                    fontSize: 12,
-                    color: PdfColor.fromInt(0xFF718096),
-                  ),
-                ),
-                pw.Text(
-                  DateFormat('MMMM d, y').format(DateTime.now()),
-                  style: const pw.TextStyle(
-                    fontSize: 14,
-                    color: PdfColor.fromInt(0xFF4A5568),
-                  ),
-                ),
-              ],
+            pw.Text(
+              'Generated: ${DateFormat('MMMM d, y').format(DateTime.now())}',
+              style: pw.TextStyle(
+                fontSize: 12,
+                color: PdfColor.fromInt(AppColors.textLight.toARGB32()),
+              ),
             ),
           ],
         ),
+        pw.SizedBox(height: 12),
+        pw.Divider(color: PdfColor.fromInt(AppColors.borderLight.toARGB32())),
       ],
     );
   }
@@ -156,53 +120,44 @@ class ExportService {
     final youAreOwed = userBalance > 0 ? userBalance : 0.0;
 
     return pw.Container(
+      padding: const pw.EdgeInsets.all(16),
       decoration: pw.BoxDecoration(
-        color: const PdfColor.fromInt(0xFFF7FAFC),
-        borderRadius: pw.BorderRadius.circular(12),
-        border:
-            pw.Border.all(color: const PdfColor.fromInt(0xFFE2E8F0), width: 1),
+        color: PdfColor.fromInt(AppColors.backgroundLight.toARGB32()),
+        borderRadius: pw.BorderRadius.circular(8),
       ),
-      padding: const pw.EdgeInsets.all(20),
       child: pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
           pw.Text(
-            'Financial Summary',
+            'Financial Overview',
             style: pw.TextStyle(
               font: ttf,
-              fontSize: 20,
+              fontSize: 18,
               fontWeight: pw.FontWeight.bold,
-              color: const PdfColor.fromInt(0xFF2D3748),
+              color: PdfColor.fromInt(AppColors.primaryDark.toARGB32()),
             ),
           ),
-          pw.SizedBox(height: 20),
+          pw.SizedBox(height: 16),
           pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
             children: [
-              pw.Expanded(
-                child: _buildSummaryCard(
-                  'Total Expenses',
-                  '${_settingsService.currency}${totalExpenses.toStringAsFixed(2)}',
-                  const PdfColor.fromInt(0xFF4299E1),
-                  ttf,
-                ),
+              _buildSummaryCard(
+                'Total Spent',
+                '${_settingsService.currency}${totalExpenses.toStringAsFixed(2)}',
+                PdfColor.fromInt(AppColors.primaryMain.toARGB32()),
+                ttf,
               ),
-              pw.SizedBox(width: 10),
-              pw.Expanded(
-                child: _buildSummaryCard(
-                  'You Owe',
-                  '${_settingsService.currency}${youOwe.toStringAsFixed(2)}',
-                  const PdfColor.fromInt(0xFFF56565),
-                  ttf,
-                ),
+              _buildSummaryCard(
+                'You Owe',
+                '${_settingsService.currency}${youOwe.toStringAsFixed(2)}',
+                PdfColor.fromInt(AppColors.negativeBalance.toARGB32()),
+                ttf,
               ),
-              pw.SizedBox(width: 10),
-              pw.Expanded(
-                child: _buildSummaryCard(
-                  'You Are Owed',
-                  '${_settingsService.currency}${youAreOwed.toStringAsFixed(2)}',
-                  const PdfColor.fromInt(0xFF48BB78),
-                  ttf,
-                ),
+              _buildSummaryCard(
+                'You Are Owed',
+                '${_settingsService.currency}${youAreOwed.toStringAsFixed(2)}',
+                PdfColor.fromInt(AppColors.positiveBalance.toARGB32()),
+                ttf,
               ),
             ],
           ),
@@ -213,36 +168,27 @@ class ExportService {
 
   pw.Widget _buildSummaryCard(
       String title, String value, PdfColor color, pw.Font ttf) {
-    return pw.Container(
-      padding: const pw.EdgeInsets.all(12),
-      decoration: pw.BoxDecoration(
-        color: const PdfColor.fromInt(0xFFFFFFFF),
-        borderRadius: pw.BorderRadius.circular(8),
-        border: pw.Border.all(color: color, width: 1.5),
-      ),
-      child: pw.Column(
-        crossAxisAlignment: pw.CrossAxisAlignment.start,
-        children: [
-          pw.Text(
-            title,
-            style: pw.TextStyle(
-              font: ttf,
-              fontSize: 12,
-              color: const PdfColor.fromInt(0xFF718096),
-            ),
+    return pw.Column(
+      children: [
+        pw.Text(
+          title,
+          style: pw.TextStyle(
+            font: ttf,
+            fontSize: 12,
+            color: PdfColor.fromInt(AppColors.textLight.toARGB32()),
           ),
-          pw.SizedBox(height: 8),
-          pw.Text(
-            value,
-            style: pw.TextStyle(
-              font: ttf,
-              fontSize: 16,
-              fontWeight: pw.FontWeight.bold,
-              color: color,
-            ),
+        ),
+        pw.SizedBox(height: 6),
+        pw.Text(
+          value,
+          style: pw.TextStyle(
+            font: ttf,
+            fontSize: 16,
+            fontWeight: pw.FontWeight.bold,
+            color: color,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -252,46 +198,47 @@ class ExportService {
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
         pw.Text(
-          'Transaction History',
+          'All Transactions',
           style: pw.TextStyle(
             font: ttf,
-            fontSize: 20,
+            fontSize: 18,
             fontWeight: pw.FontWeight.bold,
-            color: const PdfColor.fromInt(0xFF2D3748),
+            color: PdfColor.fromInt(AppColors.primaryDark.toARGB32()),
           ),
         ),
         pw.SizedBox(height: 12),
         pw.TableHelper.fromTextArray(
-          headerDecoration: const pw.BoxDecoration(
-            color: PdfColor.fromInt(0xFF4299E1),
-            borderRadius: pw.BorderRadius.only(
-              topLeft: pw.Radius.circular(8),
-              topRight: pw.Radius.circular(8),
+          headerDecoration: pw.BoxDecoration(
+            border: pw.Border(
+              bottom: pw.BorderSide(
+                color: PdfColor.fromInt(AppColors.borderMain.toARGB32()),
+                width: 1.5,
+              ),
             ),
           ),
           headerHeight: 25,
           cellHeight: 30,
-          headers: ['Date', 'Description', 'Payer', 'Amount'],
+          headers: ['Date', 'Description', 'Paid By', 'Amount'],
           data: expenses
               .map((e) => [
-                    DateFormat('MMM d, y').format(e.date),
+                    DateFormat('MM/dd/yy').format(e.date),
                     e.description,
-                    userNames[e.payerId] ?? 'Unknown',
+                    userNames[e.payerId] ?? 'N/A',
                     '${_settingsService.currency}${e.amount.toStringAsFixed(2)}',
                   ])
               .toList(),
           border: null,
           headerStyle: pw.TextStyle(
-            color: const PdfColor.fromInt(0xFFFFFFFF),
+            color: PdfColor.fromInt(AppColors.textMain.toARGB32()),
             fontWeight: pw.FontWeight.bold,
-            fontSize: 12,
-          ),
-          cellStyle: const pw.TextStyle(
-            color: PdfColor.fromInt(0xFF4A5568),
             fontSize: 11,
           ),
+          cellStyle: pw.TextStyle(
+            color: PdfColor.fromInt(AppColors.textLight.toARGB32()),
+            fontSize: 10,
+          ),
           columnWidths: {
-            0: const pw.FlexColumnWidth(2),
+            0: const pw.FlexColumnWidth(1.5),
             1: const pw.FlexColumnWidth(3),
             2: const pw.FlexColumnWidth(2),
             3: const pw.FlexColumnWidth(1.5),
@@ -319,9 +266,9 @@ class ExportService {
           'Expense Breakdown',
           style: pw.TextStyle(
             font: ttf,
-            fontSize: 20,
+            fontSize: 18,
             fontWeight: pw.FontWeight.bold,
-            color: const PdfColor.fromInt(0xFF2D3748),
+            color: PdfColor.fromInt(AppColors.primaryDark.toARGB32()),
           ),
         ),
         pw.SizedBox(height: 12),
@@ -332,9 +279,10 @@ class ExportService {
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
               pw.Container(
-                padding: const pw.EdgeInsets.all(10),
+                padding:
+                    const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                 decoration: pw.BoxDecoration(
-                  color: const PdfColor.fromInt(0xFFF7FAFC),
+                  color: PdfColor.fromInt(AppColors.surfaceMedium.toARGB32()),
                   borderRadius: pw.BorderRadius.circular(6),
                 ),
                 child: pw.Row(
@@ -345,16 +293,16 @@ class ExportService {
                       style: pw.TextStyle(
                         font: ttf,
                         fontWeight: pw.FontWeight.bold,
-                        fontSize: 14,
-                        color: const PdfColor.fromInt(0xFF2D3748),
+                        fontSize: 13,
+                        color: PdfColor.fromInt(AppColors.textMain.toARGB32()),
                       ),
                     ),
                     pw.Text(
-                      DateFormat('MMM d, y').format(expense.date),
+                      DateFormat('MMM d').format(expense.date),
                       style: pw.TextStyle(
                         font: ttf,
-                        fontSize: 12,
-                        color: const PdfColor.fromInt(0xFF718096),
+                        fontSize: 11,
+                        color: PdfColor.fromInt(AppColors.textLight.toARGB32()),
                       ),
                     ),
                   ],
@@ -362,38 +310,27 @@ class ExportService {
               ),
               pw.SizedBox(height: 8),
               pw.TableHelper.fromTextArray(
-                headerDecoration: const pw.BoxDecoration(
-                  color: PdfColor.fromInt(0xFFEDF2F7),
+                headerStyle: pw.TextStyle(
+                  fontWeight: pw.FontWeight.bold,
+                  fontSize: 10,
+                  color: PdfColor.fromInt(AppColors.textMain.toARGB32()),
                 ),
-                headerHeight: 20,
-                cellHeight: 25,
+                cellStyle: pw.TextStyle(
+                  fontSize: 9,
+                  color: PdfColor.fromInt(AppColors.textLight.toARGB32()),
+                ),
                 headers: ['Member', 'Share', 'Paid', 'Owes'],
                 data: splits.entries.map((entry) {
                   final userId = entry.key;
                   final split = entry.value;
                   return [
-                    userNames[userId] ?? 'Unknown',
+                    userNames[userId] ?? 'N/A',
                     '${_settingsService.currency}${split['share']?.toStringAsFixed(2) ?? '0.00'}',
                     '${_settingsService.currency}${split['paid']?.toStringAsFixed(2) ?? '0.00'}',
                     '${_settingsService.currency}${split['owes']?.toStringAsFixed(2) ?? '0.00'}',
                   ];
                 }).toList(),
                 border: null,
-                headerStyle: pw.TextStyle(
-                  color: const PdfColor.fromInt(0xFF4A5568),
-                  fontWeight: pw.FontWeight.bold,
-                  fontSize: 11,
-                ),
-                cellStyle: const pw.TextStyle(
-                  color: PdfColor.fromInt(0xFF4A5568),
-                  fontSize: 10,
-                ),
-                columnWidths: {
-                  0: const pw.FlexColumnWidth(2),
-                  1: const pw.FlexColumnWidth(1.5),
-                  2: const pw.FlexColumnWidth(1.5),
-                  3: const pw.FlexColumnWidth(1.5),
-                },
                 cellAlignments: {
                   0: pw.Alignment.centerLeft,
                   1: pw.Alignment.centerRight,
@@ -401,7 +338,7 @@ class ExportService {
                   3: pw.Alignment.centerRight,
                 },
               ),
-              pw.SizedBox(height: 20),
+              pw.SizedBox(height: 16),
             ],
           );
         }),
@@ -415,81 +352,56 @@ class ExportService {
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
         pw.Text(
-          'Current Balances',
+          'Final Balances',
           style: pw.TextStyle(
             font: ttf,
-            fontSize: 20,
+            fontSize: 18,
             fontWeight: pw.FontWeight.bold,
-            color: const PdfColor.fromInt(0xFF2D3748),
+            color: PdfColor.fromInt(AppColors.primaryDark.toARGB32()),
           ),
         ),
         pw.SizedBox(height: 12),
-        // ignore: deprecated_member_use
-        pw.Table.fromTextArray(
-          headerDecoration: const pw.BoxDecoration(
-            color: PdfColor.fromInt(0xFF4299E1),
-            borderRadius: pw.BorderRadius.only(
-              topLeft: pw.Radius.circular(8),
-              topRight: pw.Radius.circular(8),
+        pw.Table(
+          border: pw.TableBorder(
+            horizontalInside: pw.BorderSide(
+              color: PdfColor.fromInt(AppColors.borderLight.toARGB32()),
+              width: 0.5,
             ),
           ),
-          headerHeight: 25,
-          cellHeight: 30,
-          headers: [
-            ['Member', 'Balance']
-          ],
-          data: balances.entries.map((entry) {
+          children: balances.entries.map((entry) {
             final balance = entry.value;
             final isNegative = balance < 0;
-            return [
-              pw.Container(
-                padding: const pw.EdgeInsets.symmetric(vertical: 4),
-                child: pw.Text(
-                  userNames[entry.key] ?? 'Unknown',
-                  style: pw.TextStyle(
-                    fontSize: 11,
-                    fontWeight: pw.FontWeight.bold,
+            return pw.TableRow(
+              children: [
+                pw.Padding(
+                  padding: const pw.EdgeInsets.symmetric(vertical: 8),
+                  child: pw.Text(
+                    userNames[entry.key] ?? 'N/A',
+                    style: pw.TextStyle(
+                      fontSize: 11,
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColor.fromInt(AppColors.textMain.toARGB32()),
+                    ),
                   ),
                 ),
-              ),
-              pw.Container(
-                padding: const pw.EdgeInsets.symmetric(vertical: 4),
-                decoration: pw.BoxDecoration(
-                  color: isNegative
-                      ? const PdfColor.fromInt(0xFFFFF5F5)
-                      : const PdfColor.fromInt(0xFFEBF8FF),
-                ),
-                child: pw.Align(
+                pw.Align(
                   alignment: pw.Alignment.centerRight,
                   child: pw.Text(
                     '${_settingsService.currency}${balance.toStringAsFixed(2)}',
                     style: pw.TextStyle(
                       color: isNegative
-                          ? const PdfColor.fromInt(0xFFF56565)
-                          : const PdfColor.fromInt(0xFF48BB78),
+                          ? PdfColor.fromInt(
+                              AppColors.negativeBalance.toARGB32())
+                          : PdfColor.fromInt(
+                              AppColors.positiveBalance.toARGB32()),
                       fontSize: 11,
                       fontWeight: pw.FontWeight.bold,
                     ),
                   ),
                 ),
-              ),
-            ];
+              ],
+            );
           }).toList(),
-          border: const pw.TableBorder(
-            horizontalInside: pw.BorderSide(
-              color: PdfColor.fromInt(0xFFE2E8F0),
-              width: 0.5,
-            ),
-          ),
-          headerStyle: pw.TextStyle(
-            color: const PdfColor.fromInt(0xFFFFFFFF),
-            fontWeight: pw.FontWeight.bold,
-            fontSize: 12,
-          ),
-          cellAlignments: {
-            0: pw.Alignment.centerLeft,
-            1: pw.Alignment.centerRight,
-          },
         ),
       ],
     );
@@ -506,51 +418,50 @@ class ExportService {
           'Settlement Plan',
           style: pw.TextStyle(
             font: ttf,
-            fontSize: 20,
+            fontSize: 18,
             fontWeight: pw.FontWeight.bold,
-            color: const PdfColor.fromInt(0xFF2D3748),
+            color: PdfColor.fromInt(AppColors.primaryDark.toARGB32()),
           ),
         ),
         pw.SizedBox(height: 12),
-        pw.TableHelper.fromTextArray(
-          headerDecoration: const pw.BoxDecoration(
-            color: PdfColor.fromInt(0xFF4299E1),
-            borderRadius: pw.BorderRadius.only(
-              topLeft: pw.Radius.circular(8),
-              topRight: pw.Radius.circular(8),
-            ),
-          ),
-          headerHeight: 25,
-          cellHeight: 30,
-          headers: ['From', 'To', 'Amount'],
-          data: settlements
-              .map((s) => [
-                    userNames[s['from']] ?? 'Unknown',
-                    userNames[s['to']] ?? 'Unknown',
+        pw.Column(
+          children: settlements.map((s) {
+            return pw.Container(
+              margin: const pw.EdgeInsets.only(bottom: 8),
+              padding: const pw.EdgeInsets.all(12),
+              decoration: pw.BoxDecoration(
+                border: pw.Border.all(
+                    color: PdfColor.fromInt(AppColors.borderLight.toARGB32())),
+                borderRadius: pw.BorderRadius.circular(6),
+              ),
+              child: pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Row(
+                    children: [
+                      pw.Text(
+                        userNames[s['from']] ?? 'N/A',
+                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                      ),
+                      pw.Text('  owes  '),
+                      pw.Text(
+                        userNames[s['to']] ?? 'N/A',
+                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                  pw.Text(
                     '${_settingsService.currency}${s['amount']?.toStringAsFixed(2)}',
-                  ])
-              .toList(),
-          border: null,
-          headerStyle: pw.TextStyle(
-            color: const PdfColor.fromInt(0xFFFFFFFF),
-            fontWeight: pw.FontWeight.bold,
-            fontSize: 12,
-          ),
-          cellStyle: pw.TextStyle(
-            color: const PdfColor.fromInt(0xFF48BB78),
-            fontSize: 11,
-            fontWeight: pw.FontWeight.bold,
-          ),
-          columnWidths: {
-            0: const pw.FlexColumnWidth(2),
-            1: const pw.FlexColumnWidth(2),
-            2: const pw.FlexColumnWidth(1.5),
-          },
-          cellAlignments: {
-            0: pw.Alignment.centerLeft,
-            1: pw.Alignment.centerLeft,
-            2: pw.Alignment.centerRight,
-          },
+                    style: pw.TextStyle(
+                      fontWeight: pw.FontWeight.bold,
+                      color:
+                          PdfColor.fromInt(AppColors.secondaryMain.toARGB32()),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
         ),
       ],
     );

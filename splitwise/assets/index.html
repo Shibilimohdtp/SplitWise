@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Join Group • Splitwise</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-main-light: #5E5CE6;
+            --background-light: #F8F9FA;
+            --text-main-light: #1C1C1E;
+            --text-light-light: #3A3A3C;
+            --surface-light: #FFFFFF;
+            --primary-main-dark: #7D7BF7;
+            --background-dark: #0D1B2A;
+            --text-main-dark: #F2F2F7;
+            --text-light-dark: #8E8E93;
+            --surface-dark: #1B263B;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--background-light);
+            color: var(--text-main-light);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+            transition: all 0.3s ease;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 24rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .card {
+            background-color: var(--surface-light);
+            border-radius: 1.5rem;
+            padding: 2.5rem 2rem;
+            width: 100%;
+            text-align: center;
+            box-shadow: 
+                0 4px 6px -1px rgba(0, 0, 0, 0.1),
+                0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .logo {
+            width: 4rem;
+            height: 4rem;
+            border-radius: 1rem;
+            margin-bottom: 1.5rem;
+            object-fit: contain;
+        }
+
+        .title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.025em;
+        }
+
+        .subtitle {
+            font-size: 0.95rem;
+            color: var(--text-light-light);
+            margin-bottom: 2rem;
+            line-height: 1.5;
+            opacity: 0.8;
+            transition: color 0.3s ease;
+        }
+
+        .primary-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 0.875rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: white;
+            background-color: var(--primary-main-light);
+            border: none;
+            border-radius: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            outline: none;
+            text-decoration: none;
+            letter-spacing: -0.01em;
+        }
+
+        .primary-button:hover {
+            background-color: #4B49D1;
+            transform: translateY(-1px);
+            box-shadow: 
+                0 10px 15px -3px rgba(94, 92, 230, 0.3),
+                0 4px 6px -2px rgba(94, 92, 230, 0.2);
+        }
+
+        .primary-button:active {
+            transform: translateY(0);
+            box-shadow: 
+                0 4px 6px -1px rgba(94, 92, 230, 0.2),
+                0 2px 4px -1px rgba(94, 92, 230, 0.1);
+        }
+
+        .footer {
+            text-align: center;
+            max-width: 20rem;
+        }
+
+        .footer-text {
+            font-size: 0.8rem;
+            color: var(--text-light-light);
+            line-height: 1.5;
+            transition: color 0.3s ease;
+        }
+
+        .footer-link {
+            color: var(--primary-main-light);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .footer-link:hover {
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+
+        /* Dark mode styles */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background-color: var(--background-dark);
+                color: var(--text-main-dark);
+            }
+
+            .card {
+                background-color: var(--surface-dark);
+                box-shadow: 
+                    0 10px 25px -5px rgba(0, 0, 0, 0.25),
+                    0 8px 10px -6px rgba(0, 0, 0, 0.1);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            .subtitle {
+                color: var(--text-light-dark);
+            }
+
+            .primary-button {
+                background-color: var(--primary-main-dark);
+            }
+
+            .primary-button:hover {
+                background-color: #6E6CF0;
+                box-shadow: 
+                    0 10px 15px -3px rgba(125, 123, 247, 0.3),
+                    0 4px 6px -2px rgba(125, 123, 247, 0.2);
+            }
+
+            .primary-button:active {
+                box-shadow: 
+                    0 4px 6px -1px rgba(125, 123, 247, 0.2),
+                    0 2px 4px -1px rgba(125, 123, 247, 0.1);
+            }
+
+            .footer-text {
+                color: var(--text-light-dark);
+            }
+
+            .footer-link {
+                color: var(--primary-main-dark);
+            }
+        }
+
+        /* Responsive design for larger screens */
+        @media (min-width: 640px) {
+            .main-container {
+                max-width: 26rem;
+            }
+
+            .card {
+                padding: 3rem 2.5rem;
+            }
+
+            .logo {
+                width: 5rem;
+                height: 5rem;
+                margin-bottom: 2rem;
+            }
+
+            .title {
+                font-size: 1.75rem;
+                margin-bottom: 0.75rem;
+            }
+
+            .subtitle {
+                font-size: 1rem;
+                margin-bottom: 2.5rem;
+            }
+
+            .primary-button {
+                padding: 1rem 2rem;
+                font-size: 1.05rem;
+            }
+
+            .footer-text {
+                font-size: 0.875rem;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .main-container {
+                max-width: 28rem;
+                gap: 2.5rem;
+            }
+
+            .card {
+                padding: 3.5rem 3rem;
+            }
+        }
+
+        /* Loading state for button */
+        .primary-button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Focus styles for accessibility */
+        .primary-button:focus-visible {
+            outline: 2px solid var(--primary-main-light);
+            outline-offset: 2px;
+        }
+
+        .footer-link:focus-visible {
+            outline: 2px solid var(--primary-main-light);
+            outline-offset: 2px;
+            border-radius: 2px;
+        }
+
+        /* Subtle animation on page load */
+        .card {
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="card">
+            <img src="logo/Logo.png" 
+                 alt="Splitwise Logo" 
+                 class="logo">
+            <h1 class="title">Join the Group</h1>
+            <p class="subtitle">You've been invited to join a group on Splitwise. Tap below to get started.</p>
+            <button class="primary-button" onclick="openApp()" id="joinButton">
+                Open in Splitwise
+            </button>
+        </div>
+        
+        <div class="footer">
+            <p class="footer-text">
+                Don't have the app? 
+                <a href="https://play.google.com/store/apps/details?id=com.shibilimohdtp.splitwise" 
+                   class="footer-link">Google Play</a> • 
+                <a href="https://apps.apple.com/app/your-app-id" 
+                   class="footer-link">App Store</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        function openApp() {
+            const button = document.getElementById('joinButton');
+            const urlParams = new URLSearchParams(window.location.search);
+            const groupId = urlParams.get('id');
+
+            if (!groupId) {
+                alert('Group ID not found in the link.');
+                return;
+            }
+
+            // Disable button temporarily to prevent multiple clicks
+            button.disabled = true;
+            button.textContent = 'Opening...';
+
+            const deepLink = `splitwise://group?id=${groupId}`;
+            
+            // Try to open the app
+            window.location.href = deepLink;
+
+            // Fallback mechanism
+            setTimeout(() => {
+                const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.shibilimohdtp.splitwise';
+                const appStoreUrl = 'https://apps.apple.com/app/your-app-id';
+                const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+
+                if (/android/i.test(userAgent)) {
+                    window.location.href = playStoreUrl;
+                } else if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
+                    window.location.href = appStoreUrl;
+                }
+
+                // Re-enable button
+                button.disabled = false;
+                button.textContent = 'Open in Splitwise';
+            }, 2000);
+        }
+
+        // Handle visibility change to re-enable button if user comes back
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                const button = document.getElementById('joinButton');
+                button.disabled = false;
+                button.textContent = 'Open in Splitwise';
+            }
+        });
+    </script>
+</body>
+</html>
